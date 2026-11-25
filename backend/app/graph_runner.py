@@ -40,11 +40,14 @@ INITIAL_STATE = {
 def create_run() -> dict:
     thread_id = f"run-{uuid.uuid4().hex[:12]}"
     with connect() as conn:
-        cur = conn.execute(
-            "INSERT INTO runs(thread_id, status, started_at) VALUES (?, 'running', ?)",
+        # RETURNING id (not cursor.lastrowid) — works on SQLite and
+        # Postgres alike.
+        row = conn.execute(
+            "INSERT INTO runs(thread_id, status, started_at) "
+            "VALUES (?, 'running', ?) RETURNING id",
             (thread_id, utcnow_iso()),
-        )
-        return {"id": cur.lastrowid, "thread_id": thread_id}
+        ).fetchone()
+        return {"id": row[0], "thread_id": thread_id}
 
 
 def _record_step(run_id: int, seq: int, node: str, detail: str, status: str = "done") -> int:
@@ -272,8 +275,21 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
                         f"{category}, source={source})")
 
 
+# Runs are synchronous (they execute inside the request, not in a
+# detached thread — see main._start_run). A Vercel function gets at
+# most 300s, so a run processes a bounded batch and leaves the rest
+# for the next run instead of risking a mid-run timeout. One email is
+# ~4 Groq calls; 10 emails is comfortably inside the budget.
+MAX_EMAILS_PER_RUN = 10
+
+
 def run_workflow(run_id: int) -> None:
-    """Background-thread entry point for a run."""
+    """Run the workflow over the unanswered inbox, synchronously.
+
+    Called inside the request (POST /api/runs or the Vercel cron), so
+    the work finishes before the function returns — nothing is left
+    to a background thread the platform may freeze.
+    """
     seq = 0
     try:
         # Live mode without an LLM key: fail fast with the setup message
@@ -296,7 +312,14 @@ def run_workflow(run_id: int) -> None:
                                "Inbox empty — nothing to process")
             _finish_run(run_id, "completed")
             return
-        for email in emails:
+        # Bound the batch so the run fits inside a serverless invocation.
+        batch = emails[:MAX_EMAILS_PER_RUN]
+        if len(emails) > MAX_EMAILS_PER_RUN:
+            seq = _record_step(
+                run_id, seq, "load_inbox_emails",
+                f"{len(emails)} unanswered — processing {MAX_EMAILS_PER_RUN} "
+                "this run, the rest on the next run")
+        for email in batch:
             seq = _process_one_email(run_id, seq, email)
         _finish_run(run_id, "completed")
     except Exception:

@@ -14,7 +14,10 @@ when no Google key is set).
 Gmail is only ever live when the user supplies a credentials.json
 (see GMAIL_CREDENTIALS_PATH). No credentials are ever committed or invented.
 """
+import base64
+import json
 import os
+import tempfile
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -25,6 +28,50 @@ load_dotenv()  # also honour CWD / process env
 
 VERSION = "0.1.0"
 MODEL = "openai/gpt-oss-20b"
+
+
+def _decode_json_env(value: str) -> str | None:
+    """Decode an env var holding a JSON file's contents, either as raw
+    JSON or base64-encoded JSON. Returns the JSON text, or None."""
+    value = value.strip()
+    if not value:
+        return None
+    if value.startswith("{"):
+        return value  # raw JSON
+    try:
+        decoded = base64.b64decode(value, validate=True).decode("utf-8")
+        json.loads(decoded)  # must be valid JSON
+        return decoded
+    except Exception:
+        return None
+
+
+def _materialize_gmail_files() -> None:
+    """On serverless (Vercel) there is no persistent filesystem to hold
+    credentials.json / token.json, so they are passed as env vars
+    (GMAIL_CREDENTIALS_JSON / GMAIL_TOKEN_JSON, base64 or raw JSON) and
+    materialized here into the temp dir, where GmailTools can read them
+    as files. Sets GMAIL_CREDENTIALS_PATH / GMAIL_TOKEN_PATH so the
+    rest of the app finds them. No-op when the env vars are unset
+    (local dev keeps using files on disk)."""
+    tmp = Path(tempfile.gettempdir())
+    for env_name, path_env, filename in (
+        ("GMAIL_CREDENTIALS_JSON", "GMAIL_CREDENTIALS_PATH",
+         "mailroom-credentials.json"),
+        ("GMAIL_TOKEN_JSON", "GMAIL_TOKEN_PATH", "mailroom-token.json"),
+    ):
+        text = _decode_json_env(os.environ.get(env_name, ""))
+        if text is None:
+            continue
+        target = tmp / filename
+        try:
+            target.write_text(text, encoding="utf-8")
+        except OSError:
+            continue
+        # Only set the path env var if the user hasn't pointed it
+        # somewhere explicit already.
+        if not os.environ.get(path_env):
+            os.environ[path_env] = str(target)
 
 
 def _db_path() -> Path:
@@ -39,6 +86,9 @@ def _checkpoints_path() -> Path:
 
 class Settings:
     def __init__(self) -> None:
+        # Materialize env-provided Gmail credentials FIRST so the
+        # paths below resolve to them.
+        _materialize_gmail_files()
         self.base_dir = BASE_DIR
         self.data_dir = BASE_DIR / "data"
         self.uploads_dir = BASE_DIR / "data" / "uploads"
@@ -50,6 +100,9 @@ class Settings:
         self.database_url = os.environ.get("DATABASE_URL", "").strip()
         self.gmail_credentials_path = os.environ.get(
             "GMAIL_CREDENTIALS_PATH", ""
+        ).strip()
+        self.gmail_token_path = os.environ.get(
+            "GMAIL_TOKEN_PATH", ""
         ).strip()
         self.my_email = os.environ.get("MY_EMAIL", "").strip()
 
@@ -120,6 +173,8 @@ class Settings:
         candidates = []
         if self.gmail_credentials_path:
             candidates.append(Path(self.gmail_credentials_path))
+        if self.gmail_token_path:
+            candidates.append(Path(self.gmail_token_path))
         candidates += [
             BASE_DIR / "credentials.json",
             BASE_DIR / "token.json",

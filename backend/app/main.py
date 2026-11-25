@@ -16,7 +16,6 @@ Rules enforced here:
   mode it only marks the draft approved locally (labelled mock) — nothing
   is ever sent without a human approving first.
 """
-import threading
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
@@ -107,10 +106,17 @@ def _start_run() -> dict:
             status_code=503,
             detail=settings.setup_hint or "GROQ_API_KEY is not set.")
     run = create_run()
-    thread = threading.Thread(target=run_workflow, args=(run["id"],),
-                              daemon=True)
-    thread.start()
-    return {"run_id": run["id"], "status": "running"}
+    # Synchronous: the workflow runs inside this request and finishes
+    # before we return. A detached thread is unreliable on serverless —
+    # the platform may freeze the instance once the response is sent,
+    # so the run would die halfway. The frontend polls
+    # GET /api/runs/{id} and sees the final status right away.
+    run_workflow(run["id"])
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT status FROM runs WHERE id = ?", (run["id"],)).fetchone()
+    return {"run_id": run["id"],
+            "status": row["status"] if row else "completed"}
 
 
 # ---------------------------------------------------------------- health/settings

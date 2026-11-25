@@ -1,9 +1,24 @@
-"""SQLite persistence (stdlib sqlite3 only, no ORM).
+"""Persistence: emails, drafts, decisions, KB docs, runs, run steps.
 
-Short-lived connections per call, WAL mode. One extra table beyond the
-spec (kb_chunks) holds the actual chunk text; kb_docs.chunks is the count.
+Two backends, chosen by environment — the application code is written
+once and never sees the difference:
+- Postgres (Supabase) when DATABASE_URL is set (postgresql://...).
+  This is the deployment backend: it survives serverless cold starts,
+  so emails, drafts and decisions persist on Vercel.
+- SQLite (local file) otherwise. This is the local-dev backend and
+  what the tests use.
+
+The SQL in the app is written SQLite-style (`?` placeholders,
+`INTEGER PRIMARY KEY AUTOINCREMENT`). The Postgres connection
+translates those to Postgres (`%s`, SERIAL) transparently, and
+returns rows that support both positional (row[0]) and key
+(row["id"]) access, like sqlite3.Row. Callers never see the
+difference. One rule this imposes: to get a newly inserted id, use
+`INSERT ... RETURNING id` + fetchone() — never cursor.lastrowid
+(which is SQLite-only).
 """
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -75,13 +90,168 @@ CREATE TABLE IF NOT EXISTS run_steps(
 );
 """
 
+# Postgres DDL: same tables, SERIAL instead of AUTOINCREMENT. TEXT and
+# REFERENCES are valid in both dialects, so one string replace is all
+# the schema translation needs.
+SCHEMA_PG = SCHEMA.replace(
+    "INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+
+
+def use_postgres() -> bool:
+    """True when DATABASE_URL points at a Postgres (Supabase) database."""
+    url = (settings.database_url or "").strip()
+    return url.startswith(("postgres://", "postgresql://"))
+
 
 def db_path() -> Path:
     return settings.db_path
 
 
+# ------------------------------------------------------------------ Postgres
+class PgRow:
+    """A row that behaves like sqlite3.Row: positional access (row[0])
+    AND key access (row["id"]), plus .keys() and .get() so dict(row)
+    and row.get(...) both work."""
+
+    def __init__(self, columns, values):
+        self._columns = list(columns)
+        self._values = list(values)
+        self._map = dict(zip(self._columns, self._values))
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return self._map[key]
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __len__(self):
+        return len(self._values)
+
+    def keys(self):
+        return list(self._columns)
+
+    def get(self, key, default=None):
+        return self._map.get(key, default)
+
+
+def _pg_row_factory(cursor):
+    """psycopg row_factory: build a PgRow from each result tuple."""
+    if cursor.description is None:
+        # Statement with no result set (CREATE TABLE, INSERT without
+        # RETURNING, UPDATE, DELETE). No rows are ever produced, so
+        # this maker is never called — return a harmless placeholder.
+        return lambda values: ()
+    columns = [d.name for d in cursor.description]
+
+    def make_row(values):
+        return PgRow(columns, values)
+
+    return make_row
+
+
+def _to_pg_sql(sql: str) -> str:
+    """Translate SQLite-style `?` placeholders to Postgres `%s`.
+
+    Quote-aware: a `?` inside a single-quoted literal (e.g. a LIKE
+    pattern) is left alone. The app's SQL has no literal `?` today,
+    but this keeps a future one from silently breaking.
+    """
+    out = []
+    in_str = False
+    i = 0
+    while i < len(sql):
+        ch = sql[i]
+        if ch == "'":
+            # '' is an escaped quote inside a literal.
+            if in_str and i + 1 < len(sql) and sql[i + 1] == "'":
+                out.append("''")
+                i += 2
+                continue
+            in_str = not in_str
+            out.append(ch)
+        elif ch == "?" and not in_str:
+            out.append("%s")
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+class _PgCursor:
+    """Thin wrapper around a psycopg cursor: translates the SQL, then
+    delegates fetch/rowcount/iteration."""
+
+    def __init__(self, cur):
+        self._cur = cur
+
+    def execute(self, sql, params=None):
+        return self._cur.execute(_to_pg_sql(sql), params)
+
+    def fetchone(self):
+        return self._cur.fetchone()
+
+    def fetchall(self):
+        return self._cur.fetchall()
+
+    def __iter__(self):
+        return iter(self._cur)
+
+    @property
+    def rowcount(self):
+        return self._cur.rowcount
+
+
+class _PgConnection:
+    """Thin wrapper around a psycopg connection so it exposes the same
+    surface the app already uses: execute() returning a cursor,
+    executescript() for the schema, commit()/close()."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, sql, params=None):
+        cur = self._conn.execute(_to_pg_sql(sql), params)
+        return _PgCursor(cur)
+
+    def executescript(self, sql):
+        # psycopg has no executescript: split the DDL on ';' and run
+        # each statement. Safe here — the schema has no ';' inside a
+        # literal.
+        for stmt in sql.split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                self._conn.execute(stmt)
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
+
 @contextmanager
 def connect():
+    if use_postgres():
+        import psycopg
+
+        conn = psycopg.connect(settings.database_url,
+                               row_factory=_pg_row_factory)
+        pg = _PgConnection(conn)
+        try:
+            yield pg
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+        return
+
     conn = sqlite3.connect(str(db_path()))
     conn.row_factory = sqlite3.Row
     try:
@@ -94,6 +264,10 @@ def connect():
 
 
 def init_db() -> None:
+    if use_postgres():
+        with connect() as conn:
+            conn.executescript(SCHEMA_PG)
+        return
     db_path().parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         conn.executescript(SCHEMA)

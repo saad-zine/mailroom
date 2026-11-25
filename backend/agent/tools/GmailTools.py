@@ -23,7 +23,10 @@ class GmailToolsClass:
     def __init__(self, credentials_path=None, token_path=None):
         self.credentials_path = credentials_path or os.environ.get(
             "GMAIL_CREDENTIALS_PATH", "credentials.json")
-        self.token_path = token_path or "token.json"
+        # GMAIL_TOKEN_PATH lets serverless deployments point at a token
+        # materialized from the GMAIL_TOKEN_JSON env var (see config).
+        self.token_path = token_path or os.environ.get(
+            "GMAIL_TOKEN_PATH", "token.json")
         self.service = None
         self.available = False
         # Lazy: only connect when credentials actually exist.
@@ -153,6 +156,15 @@ class GmailToolsClass:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
+                # No usable token. The browser OAuth flow only works on
+                # a machine with a browser — never on serverless. On
+                # Vercel, the token must be supplied via GMAIL_TOKEN_JSON
+                # (see README); without it Gmail stays disconnected
+                # instead of hanging on a login prompt nobody can answer.
+                if os.environ.get("VERCEL"):
+                    raise RuntimeError(
+                        "Gmail token not available on Vercel — set "
+                        "GMAIL_TOKEN_JSON (see README).")
                 flow = InstalledAppFlow.from_client_secrets_file(
                     self.credentials_path, SCOPES)
                 creds = flow.run_local_server(port=0)

@@ -64,18 +64,29 @@ Want the demo instead? Set `MAILROOM_MODE=mock` in `backend/.env` — that seeds
 
 ## Deploy on Vercel (free)
 
-Everything is configured for Vercel — static frontend, Python serverless API, and a daily cron that polls the inbox. The deploy itself is a 2-minute import; it cannot be done from this repo alone because it needs a Vercel account.
+Everything is configured for Vercel — static frontend, Python serverless API, a Supabase Postgres database, and a daily cron that polls the inbox. The deploy itself is a 2-minute import; it cannot be done from this repo alone because it needs a Vercel account (and a free Supabase project).
 
-1. Push this repo to GitHub, then in the [Vercel dashboard](https://vercel.com/new): **Add New → Project → Import** the repo.
-2. Leave the **Root Directory** at the repo root. Vercel reads `vercel.json`: it builds the frontend (`frontend/dist`) and serves the API from `api/index.py`.
-3. Set these environment variables in the project settings:
+How it works on serverless, honestly: a Vercel function has no persistent process, so runs do **not** use a background thread (one would be frozen mid-run when the response returns). Instead each run executes **synchronously inside the invocation** — the cron (or your Run now click) waits for the workflow to finish — and the database lives on Supabase, not on the ephemeral filesystem. With Fluid compute a Hobby function gets up to 300 seconds, and a run processes at most 10 emails per invocation, so a daily sweep fits comfortably.
+
+1. Create a free project at [supabase.com](https://supabase.com) and copy its **connection string** (Project Settings → Database → Connection string, URI format).
+2. Push this repo to GitHub, then in the [Vercel dashboard](https://vercel.com/new): **Add New → Project → Import** the repo.
+3. Leave the **Root Directory** at the repo root. Vercel reads `vercel.json`: it builds the frontend (`frontend/dist`) and serves the API from `api/index.py`.
+4. Set these environment variables in the project settings:
    - `GROQ_API_KEY` (**required** — the live workflow needs it; without it the app refuses to run and tells you so)
+   - `DATABASE_URL` (**required on Vercel** — your Supabase connection string; without it the database resets on every cold start)
    - `GOOGLE_API_KEY` (optional — Gemini embeddings for vector RAG; without it, keyword retrieval over your real KB is used)
    - `MAILROOM_MODE=live` (default; set `mock` only for the explicit demo)
-   - `MAILROOM_DB_PATH=/tmp/mailroom.db` (required — the serverless filesystem is ephemeral; the store re-seeds on cold start)
-4. Deploy. The cron in `vercel.json` polls the inbox once a day at 09:00 UTC.
+   - `GMAIL_CREDENTIALS_JSON` and `GMAIL_TOKEN_JSON` (for real Gmail sync — see below)
+5. Deploy. The cron in `vercel.json` polls the inbox once a day at 09:00 UTC. **Run now** in the UI runs a synchronous sweep on demand.
 
-Free-tier notes: the Hobby plan allows one cron job, once per day — more frequent polling needs Pro. Serverless functions on Hobby time out after 10 seconds; a full live Gmail poll may exceed it (use **Run now** in the UI for on-demand runs instead). The database is ephemeral on Vercel: drafts and decisions reset when the function cold-starts. For persistent hosted storage, point the app at a hosted Postgres (Supabase free tier) — the storage layer is isolated in `backend/app/db.py` so the swap is contained, but Postgres support is not implemented in v1.
+**Gmail on Vercel.** There is no filesystem to upload `credentials.json` / `token.json` to, so pass their *contents* as env vars (base64 or raw JSON). Run Mailroom locally once with your Gmail connected, then:
+```bash
+base64 -w0 backend/credentials.json   # → GMAIL_CREDENTIALS_JSON
+base64 -w0 backend/token.json         # → GMAIL_TOKEN_JSON
+```
+The token is a testing-mode OAuth token: it expires after 7 days, so re-authorize locally and refresh `GMAIL_TOKEN_JSON` weekly.
+
+Free-tier notes: the Hobby plan allows one cron job, once per day, firing anywhere within the scheduled hour, with no retry on failure — more frequent polling needs Pro (or a free external cron pinging `/api/cron/poll`). Runs are synchronous inside a 300-second function limit, processing at most 10 emails per run.
 
 ## Environment variables
 
@@ -84,11 +95,12 @@ See `backend/.env.example` for the full list. The important ones:
 | Variable | Purpose | Required |
 |---|---|---|
 | `GROQ_API_KEY` | Groq (gpt-oss-20b) for the live workflow | **Yes** — without it the app refuses to run |
+| `DATABASE_URL` | Postgres connection string (Supabase) — the app uses SQLite locally when unset | **Yes on Vercel** — without it the database resets on cold start |
 | `GOOGLE_API_KEY` | Gemini embeddings for RAG | No — keyword retrieval over the real KB is used |
 | `MAILROOM_MODE` | `live` (default) or `mock` (explicit demo only) | No |
-| `MAILROOM_DB_PATH` | SQLite file location | No (default `backend/mailroom.db`; `/tmp/mailroom.db` on Vercel) |
-| `GMAIL_CREDENTIALS_PATH` | Path to a Google OAuth `credentials.json` | No — Gmail stays disconnected without it |
-| `DATABASE_URL` | Reserved for a future Postgres (Supabase) setup | No — SQLite is used in v1 |
+| `MAILROOM_DB_PATH` | SQLite file location (local dev only) | No (default `backend/mailroom.db`) |
+| `GMAIL_CREDENTIALS_PATH` | Path to a Google OAuth `credentials.json` (local) | No — Gmail stays disconnected without it |
+| `GMAIL_CREDENTIALS_JSON` / `GMAIL_TOKEN_JSON` | Gmail OAuth file contents, base64 or raw JSON (Vercel) | No — Gmail stays disconnected without them |
 
 Never commit a `.env`, a `credentials.json`, or a `token.json`. They are gitignored.
 
@@ -100,7 +112,7 @@ Full contract in the OpenAPI docs at `/docs` when the backend runs. Highlights:
 |---|---|
 | `GET /health` | Status, mode (mock/live), provider, Gmail connection |
 | `GET /api/emails` | Inbox, filterable by category and status |
-| `POST /api/runs` | Start a poll/process run (background thread) |
+| `POST /api/runs` | Start a poll/process run (runs synchronously inside the request, max 10 emails) |
 | `GET /api/runs/{id}` | Run status + per-node steps |
 | `GET /api/drafts` | The approval queue (`?status=pending`) |
 | `POST /api/drafts/{id}/approve` | Approve (creates the Gmail draft in live mode); second decision → 409 |
@@ -131,8 +143,8 @@ cd backend && .venv/bin/python -m pytest tests/ -q
 - **Gmail OAuth is the real-world wall.** The Gmail API scope Mailroom needs (`gmail.modify`) is a sensitive OAuth scope. In Google's testing mode it works for up to 100 test users with weekly re-authorization — fine for a demo and for your own inbox. A true multi-user product for strangers needs Google's OAuth verification, which is a slow review process. Mailroom does not hide this.
 - **Live mode is verified end to end (2026-11-25).** With a real Groq key, the full workflow ran over a sample support email: categorize (product_enquiry), RAG over the real KB, writer draft, proofreader feedback, draft queued for approval. The model is `openai/gpt-oss-20b` — the base's `llama-3.3-70b-versatile` was decommissioned by Groq (404 model_not_found) and was switched after verifying gpt-oss-20b returns clean structured JSON for the categorize and writer agents. Without a Google key, RAG uses the keyword retriever over the real KB instead of the Chroma vector store.
 - **No auth, no multi-tenancy.** Anyone who can reach the backend can read the inbox and approve drafts. Do not expose it publicly without adding authentication.
-- **SQLite, single node, ephemeral on serverless.** Local runs persist in `backend/mailroom.db`; on Vercel the store lives in `/tmp` and resets on cold start. Postgres (Supabase) is the documented next step, not implemented in v1.
-- **Vercel Hobby limits.** One cron per day, 10-second function timeout, no long-running polling loop — the inbox poll is a cron-triggered job, not a daemon.
+- **Postgres on Supabase, SQLite locally.** Local runs persist in `backend/mailroom.db`; on Vercel the database is Supabase Postgres (`DATABASE_URL`) — it survives cold starts. The storage layer is isolated in `backend/app/db.py`, which translates the app's SQLite-style SQL to Postgres transparently; if `DATABASE_URL` is unset the app falls back to SQLite.
+- **Vercel Hobby limits.** One cron per day (fires anywhere within the scheduled hour, no retry on failure), 300-second function limit, runs are synchronous — the inbox poll is a cron-triggered job, not a daemon, and each run processes at most 10 emails.
 - **The demo data is synthetic.** The seeded inbox (demo mode only) and the starter knowledge base are fictional (an agency called Agentia). The categorizer and drafts in demo mode are rule-based, not LLM output.
 
 ## License

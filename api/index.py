@@ -7,8 +7,10 @@ backend/, so that directory is added to sys.path. vercel.json rewrites
 app's /api/... routes match as usual.
 
 Environment variables are set in the Vercel dashboard (see README.md).
-On Vercel the filesystem is ephemeral: set MAILROOM_DB_PATH=/tmp/mailroom.db
-so the SQLite store has a writable location (it re-seeds on cold start).
+On Vercel the filesystem is ephemeral, so the database is Supabase
+Postgres via DATABASE_URL — set it, or the store resets on cold start.
+Runs execute synchronously inside the invocation (max 300s); there is
+no background thread.
 """
 
 import os

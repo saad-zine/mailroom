@@ -57,11 +57,14 @@ def add_doc(name: str, text: str, source: str | None = None) -> dict:
     chunks = chunk_text(text)
     src = source or name
     with connect() as conn:
-        cur = conn.execute(
-            "INSERT INTO kb_docs(name, chunks, created_at) VALUES (?, ?, ?)",
+        # RETURNING id (not cursor.lastrowid) — works on SQLite and
+        # Postgres alike.
+        row = conn.execute(
+            "INSERT INTO kb_docs(name, chunks, created_at) VALUES (?, ?, ?) "
+            "RETURNING id",
             (name, len(chunks), utcnow_iso()),
-        )
-        doc_id = cur.lastrowid
+        ).fetchone()
+        doc_id = row[0]
         for chunk in chunks:
             conn.execute(
                 "INSERT INTO kb_chunks(doc_id, chunk_text, source) VALUES (?, ?, ?)",

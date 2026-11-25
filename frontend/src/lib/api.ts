@@ -1,6 +1,11 @@
+// API base URL. VITE_API_URL overrides it when set (e.g. pointing a
+// local frontend at a remote backend). Otherwise it is relative
+// (same origin): on Vercel the frontend and the API share the origin
+// and /api/* is rewritten to the serverless function; in local dev
+// the Vite dev server proxies /api to localhost:8000 (vite.config.ts).
 const BASE =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ??
-  'http://localhost:8000';
+  '';
 
 export const API_BASE = BASE;
 

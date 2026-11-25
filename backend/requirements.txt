@@ -17,3 +17,6 @@ google-auth-httplib2>=0.2
 beautifulsoup4>=4.12
 pytest>=8.0
 httpx>=0.27
+# Postgres (Supabase) driver — binary wheels, no compiler needed on
+# Vercel. Only used when DATABASE_URL is set; SQLite is the fallback.
+psycopg[binary]>=3.2
