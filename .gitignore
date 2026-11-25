@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Runtime data (regenerated / seeded on first start)
+*.db
+*.sqlite3
+checkpoints.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Env / secrets — never commit
+.env
+*.env
+credentials.json
+token.json
+
+# OS
+.DS_Store
+Thumbs.db
