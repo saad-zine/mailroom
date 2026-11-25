@@ -24,7 +24,7 @@ load_dotenv(BASE_DIR / ".env")
 load_dotenv()  # also honour CWD / process env
 
 VERSION = "0.1.0"
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "openai/gpt-oss-20b"
 
 
 def _db_path() -> Path:

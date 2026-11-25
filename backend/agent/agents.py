@@ -9,7 +9,11 @@ Changes vs the base:
 - Embeddings / Chroma are only built when GOOGLE_API_KEY is set; otherwise
   the RAG chain is None and the workflow uses the keyword retriever over
   the real KB (app/kb.py) — real retrieval, just not vector search.
-- Model is llama-3.3-70b-versatile (Groq) as in the base.
+- Model is openai/gpt-oss-20b (Groq). The base used llama-3.3-70b-versatile,
+  which Groq decommissioned — it now returns 404 model_not_found, so the
+  model was switched (verified 2026-11-25 via the custom.groq connector:
+  gpt-oss-20b returns clean structured JSON for the categorize and writer
+  agents).
 """
 import os
 
@@ -42,7 +46,7 @@ class Agents:
             return
         try:
             from langchain_groq import ChatGroq
-            llama = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0.1)
+            llama = ChatGroq(model_name="openai/gpt-oss-20b", temperature=0.1)
 
             email_category_prompt = PromptTemplate(
                 template=CATEGORIZE_EMAIL_PROMPT, input_variables=["email"])

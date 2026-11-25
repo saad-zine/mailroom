@@ -79,7 +79,7 @@ See `backend/.env.example` for the full list. The important ones:
 
 | Variable | Purpose | Required |
 |---|---|---|
-| `GROQ_API_KEY` | Groq (Llama 3.3 70B) for the live workflow | **Yes** — without it the app refuses to run |
+| `GROQ_API_KEY` | Groq (gpt-oss-20b) for the live workflow | **Yes** — without it the app refuses to run |
 | `GOOGLE_API_KEY` | Gemini embeddings for RAG | No — keyword retrieval over the real KB is used |
 | `MAILROOM_MODE` | `live` (default) or `mock` (explicit demo only) | No |
 | `MAILROOM_DB_PATH` | SQLite file location | No (default `backend/mailroom.db`; `/tmp/mailroom.db` on Vercel) |
@@ -121,7 +121,7 @@ cd backend && .venv/bin/python -m pytest tests/ -q
 ## Honest limitations
 
 - **Gmail OAuth is the real-world wall.** The Gmail API scope Mailroom needs (`gmail.modify`) is a sensitive OAuth scope. In Google's testing mode it works for up to 100 test users with weekly re-authorization — fine for a demo and for your own inbox. A true multi-user product for strangers needs Google's OAuth verification, which is a slow review process. Mailroom does not hide this.
-- **Live mode needs a key and one real run to confirm.** The Groq/Gemini/Chroma paths exist and are wired, but no API keys were available in the build environment, so the live LLM workflow has never executed end to end here. What IS verified: with no key the app refuses to run with a clear setup message (it never fakes a draft), and the mock-mode tests cover the workflow, the approval gate, and the KB. Add a key and run it once to confirm the live path.
+- **Live mode is verified end to end (2026-11-25).** With a real Groq key, the full workflow ran over a sample support email: categorize (product_enquiry), RAG over the real KB, writer draft, proofreader feedback, draft queued for approval. The model is `openai/gpt-oss-20b` — the base's `llama-3.3-70b-versatile` was decommissioned by Groq (404 model_not_found) and was switched after verifying gpt-oss-20b returns clean structured JSON for the categorize and writer agents. Without a Google key, RAG uses the keyword retriever over the real KB instead of the Chroma vector store.
 - **No auth, no multi-tenancy.** Anyone who can reach the backend can read the inbox and approve drafts. Do not expose it publicly without adding authentication.
 - **SQLite, single node, ephemeral on serverless.** Local runs persist in `backend/mailroom.db`; on Vercel the store lives in `/tmp` and resets on cold start. Postgres (Supabase) is the documented next step, not implemented in v1.
 - **Vercel Hobby limits.** One cron per day, 10-second function timeout, no long-running polling loop — the inbox poll is a cron-triggered job, not a daemon.
