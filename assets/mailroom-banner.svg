@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="519" height="128" viewBox="0 0 519 128" role="img" aria-label="mailroom">
+<title>mailroom</title>
+<style>.sh{animation:sh 3s ease-in-out 0s infinite}@keyframes sh{0%{transform:translateX(0)}60%,100%{transform:translateX(830px)}}@media (prefers-reduced-motion:reduce){.rv,.sh,.fl{animation:none}.sh{opacity:0}}</style>
+<defs>
+<linearGradient id="g" gradientUnits="userSpaceOnUse" x1="24" y1="0" x2="494.4" y2="0"><stop offset="0.000" stop-color="#ffe259"/><stop offset="0.500" stop-color="#ff7b00"/><stop offset="1.000" stop-color="#ff2e2e"/></linearGradient>
+
+<linearGradient id="s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<clipPath id="t"><text font-family='ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace' font-size="16" xml:space="preserve"><tspan x="24" y="37.1" textLength="470.4" lengthAdjust="spacingAndGlyphs">                    _ __                         </tspan><tspan x="24" y="53.1" textLength="470.4" lengthAdjust="spacingAndGlyphs">   ____ ___  ____ _(_) /________  ____  ____ ___ </tspan><tspan x="24" y="69.1" textLength="470.4" lengthAdjust="spacingAndGlyphs">  / __ `__ \/ __ `/ / / ___/ __ \/ __ \/ __ `__ \</tspan><tspan x="24" y="85.1" textLength="470.4" lengthAdjust="spacingAndGlyphs"> / / / / / / /_/ / / / /  / /_/ / /_/ / / / / / /</tspan><tspan x="24" y="101.1" textLength="470.4" lengthAdjust="spacingAndGlyphs">/_/ /_/ /_/\__,_/_/_/_/   \____/\____/_/ /_/ /_/ </tspan></text></clipPath>
+<clipPath id="r"><rect class="rv" x="0" y="0" width="519" height="128"/></clipPath>
+</defs>
+
+<g clip-path="url(#r)"><g clip-path="url(#t)">
+<rect x="0" y="0" width="519" height="128" fill="url(#g)"/>
+<rect class="sh" x="-182" y="0" width="156" height="128" fill="url(#s)"/>
+</g></g>
+
+</svg>

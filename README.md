@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="assets/mailroom-banner.svg" alt="mailroom" width="519" />
+</p>
+
+<p align="center">
   <img src="assets/mailroom-logo-transparent.png" alt="Mailroom" width="120" />
 </p>
 
@@ -119,6 +123,10 @@ cd backend && .venv/bin/python -m pytest tests/ -q
 ```
 
 ## Honest limitations
+
+<p align="center">
+  <img src="assets/bloub-nuage-blase-rouge-anime.svg" alt="Bloub, unimpressed" width="120" />
+</p>
 
 - **Gmail OAuth is the real-world wall.** The Gmail API scope Mailroom needs (`gmail.modify`) is a sensitive OAuth scope. In Google's testing mode it works for up to 100 test users with weekly re-authorization — fine for a demo and for your own inbox. A true multi-user product for strangers needs Google's OAuth verification, which is a slow review process. Mailroom does not hide this.
 - **Live mode is verified end to end (2026-11-25).** With a real Groq key, the full workflow ran over a sample support email: categorize (product_enquiry), RAG over the real KB, writer draft, proofreader feedback, draft queued for approval. The model is `openai/gpt-oss-20b` — the base's `llama-3.3-70b-versatile` was decommissioned by Groq (404 model_not_found) and was switched after verifying gpt-oss-20b returns clean structured JSON for the categorize and writer agents. Without a Google key, RAG uses the keyword retriever over the real KB instead of the Chroma vector store.
