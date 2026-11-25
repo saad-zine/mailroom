@@ -109,7 +109,7 @@ class GmailToolsClass:
             return None
 
     def send_reply(self, initial_email, reply_text):
-        # Mailroom never auto-sends: drafts go to the human approval queue.
+        # Automail never auto-sends: drafts go to the human approval queue.
         # Kept for API parity with the base; not called by the workflow.
         if not self.available:
             return None

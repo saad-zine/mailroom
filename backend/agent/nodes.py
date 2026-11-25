@@ -6,7 +6,7 @@ Changes vs the base:
   (the mock rule-based engine) used whenever a real LLM chain is
   unavailable — live mode degrades gracefully instead of crashing.
 - `create_draft_response` ("send" node) NO LONGER creates a Gmail draft.
-  Mailroom never sends anything without a human approving it first: the
+  Automail never sends anything without a human approving it first: the
   node only marks the draft as ready, and graph_runner persists it to
   the approval queue. A Gmail draft is created only when a human clicks
   Approve (see app/main.py).
@@ -178,7 +178,7 @@ class Nodes:
     def create_draft_response(self, state: GraphState) -> GraphState:
         """Draft ready — queued for human approval, NOT sent to Gmail.
 
-        Mailroom rule: nothing leaves the building without a human saying
+        Automail rule: nothing leaves the building without a human saying
         yes. Persistence to the approval queue happens in graph_runner;
         the Gmail draft itself is created only on Approve.
         """
@@ -186,7 +186,7 @@ class Nodes:
         return {"retrieved_documents": "", "trials": 0}
 
     def send_email_response(self, state: GraphState) -> GraphState:
-        # Not used by the Mailroom workflow (no auto-send). Kept for parity.
+        # Not used by the Automail workflow (no auto-send). Kept for parity.
         print("Sending email...\n")
         self.gmail_tools.send_reply(state["current_email"], state["generated_email"])
         return {"retrieved_documents": "", "trials": 0}

@@ -1,4 +1,4 @@
-"""Mailroom backend tests (mock mode, FastAPI TestClient)."""
+"""Automail backend tests (mock mode, FastAPI TestClient)."""
 import io
 
 from app import kb

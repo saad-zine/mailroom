@@ -1,10 +1,10 @@
-"""Mailroom backend configuration.
+"""Automail backend configuration.
 
 Mode resolution:
-- MAILROOM_MODE=mock  -> mock mode (rule-based categorizer, template drafts,
+- AUTOMAIL_MODE=mock  -> mock mode (rule-based categorizer, template drafts,
   keyword RAG over the local KB). Default when no keys are present.
-- MAILROOM_MODE=live  -> live mode (real Groq LLM workflow).
-- MAILROOM_MODE=auto (default) -> live when GROQ_API_KEY is set, else mock.
+- AUTOMAIL_MODE=live  -> live mode (real Groq LLM workflow).
+- AUTOMAIL_MODE=auto (default) -> live when GROQ_API_KEY is set, else mock.
 
 Gmail is only ever live when the user supplies a credentials.json
 (see GMAIL_CREDENTIALS_PATH). No credentials are ever committed or invented.
@@ -23,12 +23,12 @@ MODEL = "llama-3.3-70b-versatile"
 
 
 def _db_path() -> Path:
-    override = os.environ.get("MAILROOM_DB_PATH")
-    return Path(override) if override else BASE_DIR / "mailroom.db"
+    override = os.environ.get("AUTOMAIL_DB_PATH")
+    return Path(override) if override else BASE_DIR / "automail.db"
 
 
 def _checkpoints_path() -> Path:
-    override = os.environ.get("MAILROOM_CHECKPOINTS_PATH")
+    override = os.environ.get("AUTOMAIL_CHECKPOINTS_PATH")
     return Path(override) if override else BASE_DIR / "checkpoints.db"
 
 
@@ -41,7 +41,7 @@ class Settings:
         self.checkpoints_path = _checkpoints_path()
         self.groq_api_key = os.environ.get("GROQ_API_KEY", "").strip()
         self.google_api_key = os.environ.get("GOOGLE_API_KEY", "").strip()
-        self.mode_setting = os.environ.get("MAILROOM_MODE", "auto").strip().lower()
+        self.mode_setting = os.environ.get("AUTOMAIL_MODE", "auto").strip().lower()
         self.database_url = os.environ.get("DATABASE_URL", "").strip()
         self.gmail_credentials_path = os.environ.get(
             "GMAIL_CREDENTIALS_PATH", ""

@@ -1,1 +1,1 @@
-Mailroom supports SSO login and audit logs for enterprise teams.
+Automail supports SSO login and audit logs for enterprise teams.
