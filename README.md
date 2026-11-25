@@ -33,7 +33,7 @@ writer → proofreader → sendable? → queue for human approval (or rewrite, m
 - **State** is a typed `GraphState` (emails, current email, category, draft, RAG queries, retrieved docs, writer messages, sendable flag, trials).
 - **Durability** — the graph is compiled with a `SqliteSaver` checkpointer, one thread per run, so a run's state survives a restart and can be inspected afterwards.
 - **The graph never sends anything.** Its "send" node only marks a draft ready; the draft is persisted to the approval queue, and a Gmail draft is created only when a human approves it (live mode).
-- **Mock mode** — with no API keys and no Gmail credentials, Mailroom runs end to end on a seeded demo inbox (7 realistic support emails across all 4 categories) with a rule-based categorizer, template drafts, and keyword RAG. All mock data is labelled as such in the API and the UI. This is how the hosted demo works for visitors.
+- **Live by default, demo only on request.** Mailroom runs the real workflow out of the box: Groq LLM agents, real Gmail, real RAG (Chroma vector store with Gemini embeddings, or the keyword retriever over your real knowledge base when no Google key is set). It needs a `GROQ_API_KEY` — without one the app starts but refuses to run, and tells you exactly what to set. Nothing is faked. Set `MAILROOM_MODE=mock` only if you explicitly want the demo: a seeded fake inbox (7 realistic support emails across all 4 categories), a rule-based categorizer, and template drafts. All demo data is labelled as such in the API and the UI.
 
 ## Run it locally
 
@@ -42,7 +42,7 @@ writer → proofreader → sendable? → queue for human approval (or rewrite, m
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # optional — runs fully in mock mode with no keys
+cp .env.example .env   # then set GROQ_API_KEY — free at console.groq.com
 uvicorn app.main:app --port 8000
 # API docs: http://localhost:8000/docs
 
@@ -52,9 +52,11 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-Try it: open the dashboard, click **Run now** in Settings, watch the run process the demo inbox, then open the **Approval queue** — approve one draft, reject another with a reason, and see the decided states stick. Upload a `.txt` file in the **Knowledge base** and re-index.
+Try it: set `GROQ_API_KEY` in `backend/.env`, open the dashboard, click **Run now** in Settings — with Gmail connected it processes your real inbox; without Gmail it processes whatever mail is in the local inbox (empty until you connect Gmail or add mail). Then open the **Approval queue** — approve one draft, reject another with a reason, and see the decided states stick. Upload a `.txt` file in the **Knowledge base** and re-index.
 
-To use the real workflow, set `GROQ_API_KEY` in `backend/.env` (Groq free tier, Llama 3.3 70B) and `GOOGLE_API_KEY` for Gemini embeddings. To connect a real Gmail inbox, supply a `credentials.json` for a Google Cloud project with the Gmail API enabled (see `backend/.env.example`); Mailroom only ever reads mail and creates drafts — it never sends without approval.
+To connect a real Gmail inbox, supply a `credentials.json` for a Google Cloud project with the Gmail API enabled (see `backend/.env.example`); Mailroom only ever reads mail and creates drafts — it never sends without approval. Set `GOOGLE_API_KEY` as well for Gemini embeddings (vector RAG); without it, RAG uses the keyword retriever over your real knowledge base.
+
+Want the demo instead? Set `MAILROOM_MODE=mock` in `backend/.env` — that seeds the fake inbox and runs the rule-based demo. It is opt-in only, never the default.
 
 ## Deploy on Vercel (free)
 
@@ -63,13 +65,13 @@ Everything is configured for Vercel — static frontend, Python serverless API, 
 1. Push this repo to GitHub, then in the [Vercel dashboard](https://vercel.com/new): **Add New → Project → Import** the repo.
 2. Leave the **Root Directory** at the repo root. Vercel reads `vercel.json`: it builds the frontend (`frontend/dist`) and serves the API from `api/index.py`.
 3. Set these environment variables in the project settings:
+   - `GROQ_API_KEY` (**required** — the live workflow needs it; without it the app refuses to run and tells you so)
+   - `GOOGLE_API_KEY` (optional — Gemini embeddings for vector RAG; without it, keyword retrieval over your real KB is used)
+   - `MAILROOM_MODE=live` (default; set `mock` only for the explicit demo)
    - `MAILROOM_DB_PATH=/tmp/mailroom.db` (required — the serverless filesystem is ephemeral; the store re-seeds on cold start)
-   - `GROQ_API_KEY` (optional — without it, the demo runs in mock mode)
-   - `GOOGLE_API_KEY` (optional — Gemini embeddings for RAG; without it, keyword retrieval is used)
-   - `MAILROOM_MODE=auto` (default; `mock` forces the demo, `live` requires `GROQ_API_KEY`)
 4. Deploy. The cron in `vercel.json` polls the inbox once a day at 09:00 UTC.
 
-Free-tier notes: the Hobby plan allows one cron job, once per day — more frequent polling needs Pro. Serverless functions on Hobby time out after 10 seconds; a mock-mode poll is fast, a full live Gmail poll may exceed it (use **Run now** in the UI for on-demand runs instead). The demo database is ephemeral on Vercel: drafts and decisions reset when the function cold-starts. For persistent hosted storage, point the app at a hosted Postgres (Supabase free tier) — the storage layer is isolated in `backend/app/db.py` so the swap is contained, but Postgres support is not implemented in v1.
+Free-tier notes: the Hobby plan allows one cron job, once per day — more frequent polling needs Pro. Serverless functions on Hobby time out after 10 seconds; a full live Gmail poll may exceed it (use **Run now** in the UI for on-demand runs instead). The database is ephemeral on Vercel: drafts and decisions reset when the function cold-starts. For persistent hosted storage, point the app at a hosted Postgres (Supabase free tier) — the storage layer is isolated in `backend/app/db.py` so the swap is contained, but Postgres support is not implemented in v1.
 
 ## Environment variables
 
@@ -77,9 +79,9 @@ See `backend/.env.example` for the full list. The important ones:
 
 | Variable | Purpose | Required |
 |---|---|---|
-| `GROQ_API_KEY` | Groq (Llama 3.3 70B) for the live workflow | No — mock mode without it |
-| `GOOGLE_API_KEY` | Gemini embeddings for RAG | No — keyword retrieval fallback |
-| `MAILROOM_MODE` | `auto` (default), `mock`, or `live` | No |
+| `GROQ_API_KEY` | Groq (Llama 3.3 70B) for the live workflow | **Yes** — without it the app refuses to run |
+| `GOOGLE_API_KEY` | Gemini embeddings for RAG | No — keyword retrieval over the real KB is used |
+| `MAILROOM_MODE` | `live` (default) or `mock` (explicit demo only) | No |
 | `MAILROOM_DB_PATH` | SQLite file location | No (default `backend/mailroom.db`; `/tmp/mailroom.db` on Vercel) |
 | `GMAIL_CREDENTIALS_PATH` | Path to a Google OAuth `credentials.json` | No — Gmail stays disconnected without it |
 | `DATABASE_URL` | Reserved for a future Postgres (Supabase) setup | No — SQLite is used in v1 |
@@ -108,19 +110,22 @@ Full contract in the OpenAPI docs at `/docs` when the backend runs. Highlights:
 
 ```bash
 cd backend && .venv/bin/python -m pytest tests/ -q
-# 8 passed: categorize routing (all 4 categories), mock run end to end,
+# 12 passed: categorize routing (all 4 categories), mock run end to end,
 # approve + second-approve 409, reject blocks approve 409, KB upload +
-# retrieval, draft edit, health 200, stats shape
+# retrieval, draft edit, health 200, stats shape — plus live-mode honesty:
+# no-key health reports the missing GROQ_API_KEY, runs are refused with
+# 503, live mode never seeds fake mail, and a node with no LLM chain
+# raises a clear setup error instead of faking a draft
 ```
 
 ## Honest limitations
 
 - **Gmail OAuth is the real-world wall.** The Gmail API scope Mailroom needs (`gmail.modify`) is a sensitive OAuth scope. In Google's testing mode it works for up to 100 test users with weekly re-authorization — fine for a demo and for your own inbox. A true multi-user product for strangers needs Google's OAuth verification, which is a slow review process. Mailroom does not hide this.
-- **Live mode is untested without keys.** The Groq/Gemini/Chroma paths exist and are wired, but no API keys were available in the build environment, so the live LLM workflow has never executed end to end here. Mock mode is fully verified; live mode needs a key and one real run to confirm.
+- **Live mode needs a key and one real run to confirm.** The Groq/Gemini/Chroma paths exist and are wired, but no API keys were available in the build environment, so the live LLM workflow has never executed end to end here. What IS verified: with no key the app refuses to run with a clear setup message (it never fakes a draft), and the mock-mode tests cover the workflow, the approval gate, and the KB. Add a key and run it once to confirm the live path.
 - **No auth, no multi-tenancy.** Anyone who can reach the backend can read the inbox and approve drafts. Do not expose it publicly without adding authentication.
 - **SQLite, single node, ephemeral on serverless.** Local runs persist in `backend/mailroom.db`; on Vercel the store lives in `/tmp` and resets on cold start. Postgres (Supabase) is the documented next step, not implemented in v1.
 - **Vercel Hobby limits.** One cron per day, 10-second function timeout, no long-running polling loop — the inbox poll is a cron-triggered job, not a daemon.
-- **The demo data is synthetic.** The seeded inbox and knowledge base are fictional (an agency called Agentia). The categorizer and drafts in mock mode are rule-based, not LLM output.
+- **The demo data is synthetic.** The seeded inbox (demo mode only) and the starter knowledge base are fictional (an agency called Agentia). The categorizer and drafts in demo mode are rule-based, not LLM output.
 
 ## License
 

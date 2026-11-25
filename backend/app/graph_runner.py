@@ -5,9 +5,12 @@ One graph invocation per email (single-email injected inbox), each with
 its own checkpointer thread_id derived from the run
 (`run-{run_id}-email-{email_id}`), checkpoints in backend/checkpoints.db.
 
-Live mode uses the real Groq LLM workflow; mock mode (or any missing
-optional piece in live mode) falls back to the rule-based mock engine
-inside the same nodes, so a run degrades gracefully and never crashes.
+Live mode (the default) runs the REAL workflow: Groq LLM chains, real
+Gmail sync, real RAG (Chroma vector store, or the keyword retriever over
+the real KB when no Google key is set). There is NO mock fallback in live
+mode — if the LLM is unavailable the run fails with a clear setup error
+instead of producing fake drafts. Mock mode (MAILROOM_MODE=mock, explicit
+demo only) wires the mock rule-based engine as the workflow fallback.
 """
 import sqlite3
 import traceback
@@ -91,6 +94,9 @@ def _sync_gmail_inbox() -> int:
             if exists:
                 continue
             body = e.get("body", "")
+            # No pre-categorization: the LangGraph workflow categorizes
+            # each email when it processes it. Never use the mock
+            # categorizer on real mail.
             conn.execute(
                 """INSERT INTO emails(thread_id, sender, subject, snippet,
                        body, category, status, received_at, source)
@@ -98,7 +104,7 @@ def _sync_gmail_inbox() -> int:
                 (
                     e.get("threadId"), e.get("sender"), e.get("subject"),
                     " ".join(body.split())[:140], body,
-                    mock_engine.categorize(body + " " + e.get("subject", "")),
+                    "",
                     utcnow_iso(),
                 ),
             )
@@ -139,6 +145,7 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
     }
     seq = _record_step(run_id, seq, "load_inbox_emails",
                        f"Loaded email #{email['id']}: {email.get('subject')}")
+    is_mock = settings.mode == "mock"
     try:
         from langgraph.checkpoint.sqlite import SqliteSaver
         from agent.graph import Workflow
@@ -147,8 +154,16 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
                                check_same_thread=False)
         try:
             checkpointer = SqliteSaver(conn)
-            workflow = Workflow(emails=[email_dict], fallback=mock_engine,
-                                checkpointer=checkpointer)
+            # Live mode: real LLM chains, real KB retriever, NO mock
+            # fallback — a missing key raises a clear setup error inside
+            # the nodes instead of silently faking a draft. Mock mode
+            # (explicit demo only) wires the mock engine as fallback.
+            workflow = Workflow(
+                emails=[email_dict],
+                fallback=mock_engine if is_mock else None,
+                retriever=(mock_engine.mock_rag if is_mock
+                           else kb.retrieve),
+                checkpointer=checkpointer)
             config = {
                 "configurable": {
                     "thread_id": f"run-{run_id}-email-{email['id']}"},
@@ -178,27 +193,35 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
                 pass
         finally:
             conn.close()
-    except Exception:
+    except Exception as exc:
         traceback.print_exc()
-        seq = _record_step(run_id, seq, "error",
-                           f"workflow failed for email #{email['id']}, "
-                           "falling back to mock engine", status="failed")
-        # Last-resort fallback: mock pipeline directly, same outcome shape.
-        category = mock_engine.categorize(
-            email.get("body", "") + " " + email.get("subject", ""))
-        rag = mock_engine.mock_rag(
-            email.get("subject", "") + " " + email.get("body", "")) \
-            if category == "product_enquiry" else []
-        draft = mock_engine.build_draft(
-            category, email.get("sender", ""), email.get("subject", ""),
-            email.get("body", ""), rag)
-        final_state = {
-            "email_category": category,
-            "generated_email": draft,
-            "writer_messages": [mock_engine.proofread(
-                email.get("body", ""), draft)["feedback"]],
-            "retrieved_documents": "\n".join(c["chunk"] for c in rag),
-        }
+        if is_mock:
+            # Demo mode only: mock pipeline directly, same outcome shape.
+            seq = _record_step(run_id, seq, "error",
+                               f"workflow failed for email #{email['id']}, "
+                               "falling back to mock engine", status="failed")
+            category = mock_engine.categorize(
+                email.get("body", "") + " " + email.get("subject", ""))
+            rag = mock_engine.mock_rag(
+                email.get("subject", "") + " " + email.get("body", "")) \
+                if category == "product_enquiry" else []
+            draft = mock_engine.build_draft(
+                category, email.get("sender", ""), email.get("subject", ""),
+                email.get("body", ""), rag)
+            final_state = {
+                "email_category": category,
+                "generated_email": draft,
+                "writer_messages": [mock_engine.proofread(
+                    email.get("body", ""), draft)["feedback"]],
+                "retrieved_documents": "\n".join(c["chunk"] for c in rag),
+            }
+        else:
+            # Live mode: NEVER fake a draft. Record the real error and
+            # let the run fail so the user sees what is missing.
+            seq = _record_step(run_id, seq, "error",
+                               f"workflow failed for email #{email['id']}: {exc}",
+                               status="failed")
+            raise
 
     category = final_state.get("email_category") or email.get("category") \
         or "product_enquiry"
@@ -220,14 +243,13 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
             email.get("subject", "") + " " + email.get("body", ""))
         source = "mock"
     else:
+        # Live mode: only what the real RAG actually retrieved. Never
+        # substitute mock content for a real draft's grounding.
         retrieved = (final_state.get("retrieved_documents") or "").strip()
-        if retrieved:
-            rag_context = [{"chunk": retrieved, "source": "live"}]
-        else:
-            rag_context = mock_engine.mock_rag(
-                email.get("subject", "") + " " + email.get("body", ""))
+        rag_context = ([{"chunk": retrieved, "source": "live"}]
+                       if retrieved else [])
         source = "live"
-    if not feedback:
+    if not feedback and mode == "mock":
         feedback = mock_engine.proofread(
             email.get("body", ""), draft_body)["feedback"]
 
@@ -254,6 +276,15 @@ def run_workflow(run_id: int) -> None:
     """Background-thread entry point for a run."""
     seq = 0
     try:
+        # Live mode without an LLM key: fail fast with the setup message
+        # instead of processing mail with a broken pipeline.
+        if settings.mode == "live" and not settings.llm_available:
+            seq = _record_step(
+                run_id, seq, "error",
+                settings.setup_hint or "GROQ_API_KEY is not set.",
+                status="failed")
+            _finish_run(run_id, "failed")
+            return
         if settings.mode == "live":
             synced = _sync_gmail_inbox()
             if synced:

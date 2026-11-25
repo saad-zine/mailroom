@@ -1,7 +1,10 @@
 """Mock engine: rule-based categorizer, template drafts, mock RAG.
 
-Used when no GROQ_API_KEY is set. Every mock response carries
-source="mock" (see rag_context entries and run-step details).
+EXPLICIT DEMO ONLY (MAILROOM_MODE=mock). This engine exists so the app
+can be shown without API keys. It is NEVER wired into the live path:
+live mode raises a clear setup error instead of silently substituting
+these template results. Every mock response carries source="mock"
+(see rag_context entries and run-step details).
 """
 import re
 from datetime import datetime, timedelta, timezone

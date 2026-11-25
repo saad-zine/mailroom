@@ -19,10 +19,12 @@ from .nodes import Nodes
 
 class Workflow:
     def __init__(self, emails=None, fallback=None, checkpointer=None,
-                 chroma_dir="db"):
+                 chroma_dir="db", retriever=None):
         workflow = StateGraph(GraphState)
         # Nodes() builds Agents() internally (lazy: no keys -> chains None).
-        nodes = Nodes(emails=emails, fallback=fallback)
+        # fallback is ONLY set in explicit demo mode; retriever is the RAG
+        # fallback used when the Chroma vector chain is unavailable.
+        nodes = Nodes(emails=emails, fallback=fallback, retriever=retriever)
 
         workflow.add_node("load_inbox_emails", nodes.load_new_emails)
         workflow.add_node("is_email_inbox_empty", nodes.is_email_inbox_empty)

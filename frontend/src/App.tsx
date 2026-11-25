@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type Health } from './lib/api';
 import { Sidebar } from './components/Sidebar';
-import { DemoBanner, TopBar } from './components/TopBar';
+import { DemoBanner, SetupBanner, TopBar } from './components/TopBar';
 import { Dashboard } from './views/Dashboard';
 import { Inbox } from './views/Inbox';
 import { Queue } from './views/Queue';
@@ -65,6 +65,7 @@ export default function App() {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar view={view} health={health} apiReachable={apiReachable} />
         <DemoBanner health={health} />
+        <SetupBanner health={health} />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1100px] px-6 py-6">
             {!apiReachable && view !== 'settings' && (

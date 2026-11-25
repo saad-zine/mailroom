@@ -3,10 +3,12 @@
 Changes vs the base:
 - Construction is lazy and guarded: if GROQ_API_KEY / GOOGLE_API_KEY are
   missing, the LLM chains are None instead of raising at import time.
-  `available` reports whether the real LLM chains exist.
+  `available` reports whether the real LLM chains exist. Callers must
+  NOT silently substitute fake behaviour when a chain is None — in live
+  mode they raise a clear setup error instead (see agent/nodes.py).
 - Embeddings / Chroma are only built when GOOGLE_API_KEY is set; otherwise
-  the RAG chain is None and callers fall back to the keyword retriever
-  (app/kb.py), so RAG still works with no keys.
+  the RAG chain is None and the workflow uses the keyword retriever over
+  the real KB (app/kb.py) — real retrieval, just not vector search.
 - Model is llama-3.3-70b-versatile (Groq) as in the base.
 """
 import os
@@ -35,7 +37,8 @@ class Agents:
         groq_key = os.environ.get("GROQ_API_KEY", "").strip()
         google_key = os.environ.get("GOOGLE_API_KEY", "").strip()
         if not groq_key:
-            print("[agents] GROQ_API_KEY not set — LLM agents unavailable (mock mode).")
+            print("[agents] GROQ_API_KEY not set — the LLM agents cannot run. "
+                  "Set GROQ_API_KEY (free at console.groq.com) to use Mailroom.")
             return
         try:
             from langchain_groq import ChatGroq
@@ -81,8 +84,8 @@ class Agents:
                     | qa_prompt | llama | StrOutputParser()
                 )
             else:
-                print("[agents] no Gemini key / no Chroma store — "
-                      "RAG falls back to the local keyword retriever.")
+                print("[agents] no Gemini key / no Chroma store — RAG uses "
+                      "the keyword retriever over the real KB instead.")
             self.available = True
         except Exception as e:
             print(f"[agents] failed to initialise LLM agents: {e}")

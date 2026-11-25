@@ -1,10 +1,16 @@
 """LangGraph workflow nodes (base code, adapted).
 
 Changes vs the base:
-- `Nodes` accepts injected emails (so the workflow can run over the
-  seeded mock inbox or a Gmail fetch) and an optional `fallback` engine
-  (the mock rule-based engine) used whenever a real LLM chain is
-  unavailable — live mode degrades gracefully instead of crashing.
+- `Nodes` accepts injected emails (so the workflow can run over a Gmail
+  fetch) and an optional `fallback` engine (the mock rule-based engine).
+  The fallback is ONLY wired in explicit demo mode (MAILROOM_MODE=mock).
+  In live mode there is no fallback: if a real LLM chain is unavailable,
+  the node raises a clear setup error naming the missing key, instead of
+  silently producing a template draft. Nothing is faked.
+- `retriever` is an optional callable(query) -> [{chunk, source}] used for
+  RAG when the Chroma vector chain is unavailable. In live mode it is the
+  keyword retriever over the real KB (app/kb.py) — real retrieval, just
+  not vector search. In demo mode it is the mock engine's mock_rag.
 - `create_draft_response` ("send" node) NO LONGER creates a Gmail draft.
   Mailroom never sends anything without a human approving it first: the
   node only marks the draft as ready, and graph_runner persists it to
@@ -17,16 +23,34 @@ from .tools.GmailTools import GmailToolsClass
 from .state import GraphState, Email
 
 
+_NO_LLM = (
+    "GROQ_API_KEY is not set — Mailroom needs a Groq API key to run the "
+    "email agents. Get one free at console.groq.com and set GROQ_API_KEY "
+    "(see backend/.env.example)."
+)
+
+
 class Nodes:
-    def __init__(self, agents=None, emails=None, fallback=None):
+    def __init__(self, agents=None, emails=None, fallback=None,
+                 retriever=None):
         self.agents = agents if agents is not None else Agents()
         self.gmail_tools = GmailToolsClass()
         # Injected inbox (list of dicts with Email fields). When None, the
         # node fetches unanswered emails from Gmail.
         self.injected_emails = emails
         # Fallback engine with categorize/retrieve/build_draft/proofread
-        # (app.mock_engine in mock mode).
+        # (app.mock_engine). ONLY set in explicit demo mode (MAILROOM_MODE
+        # =mock). In live mode this is None and a missing LLM chain raises
+        # a clear setup error instead of silently faking a result.
         self.fallback = fallback
+        # RAG retriever used when the Chroma vector chain is unavailable:
+        # a callable(query) -> [{chunk, source}]. Live mode passes the
+        # keyword retriever over the real KB; demo mode passes mock_rag.
+        self.retriever = retriever
+
+    def _require_llm(self, what: str) -> None:
+        """Fail loudly when the LLM chain a node needs does not exist."""
+        raise RuntimeError(f"{_NO_LLM} ({what})")
 
     def load_new_emails(self, state: GraphState) -> GraphState:
         print("Loading new emails...\n")
@@ -57,7 +81,7 @@ class Nodes:
             category = self.fallback.categorize(
                 current_email.body + " " + current_email.subject)
         else:
-            category = "product_enquiry"
+            self._require_llm("categorize_email")
         print(f"Email category: {category}")
         return {
             "email_category": category,
@@ -87,7 +111,7 @@ class Nodes:
             queries = [state["current_email"].subject,
                        email_content.strip()[:300]]
         else:
-            queries = [email_content[:200]]
+            self._require_llm("construct_rag_queries")
         return {"rag_queries": queries}
 
     def retrieve_from_rag(self, state: GraphState) -> GraphState:
@@ -97,6 +121,13 @@ class Nodes:
             for query in state["rag_queries"]:
                 rag_result = self.agents.generate_rag_answer.invoke(query)
                 final_answer += query + "\n" + rag_result + "\n\n"
+        elif self.retriever is not None:
+            # Real retrieval without the vector chain: keyword search over
+            # the real KB (live) or the demo retriever (mock mode).
+            query = (state["current_email"].subject + " "
+                     + state["current_email"].body)
+            hits = self.retriever(query, k=3)
+            final_answer = "\n\n".join(h["chunk"] for h in hits)
         elif self.fallback is not None:
             # Single combined retrieval over subject + body: per-query
             # concatenation put a tied first chunk (e.g. the model list)
@@ -130,6 +161,8 @@ class Nodes:
                 state["email_category"], state["current_email"].sender,
                 state["current_email"].subject, state["current_email"].body,
                 rag_context)
+        if not email:
+            self._require_llm("email_writer")
         trials = state.get('trials', 0) + 1
         writer_messages.append(f"**Draft {trials}:**\n{email}")
         return {
@@ -151,7 +184,7 @@ class Nodes:
                 state["current_email"].body, state["generated_email"])
             sendable, feedback = result["send"], result["feedback"]
         else:
-            sendable, feedback = True, "No proofreader available; assumed sendable."
+            self._require_llm("email_proofreader")
         writer_messages = state.get('writer_messages', [])
         writer_messages.append(f"**Proofreader Feedback:**\n{feedback}")
         return {

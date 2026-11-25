@@ -106,6 +106,21 @@ export function Settings() {
         </p>
       </div>
 
+      {/* Setup needed — live mode without its API key */}
+      {settings.setup_hint && (
+        <Card className="border border-border bg-tint-warning p-6">
+          <div className="flex items-start gap-3">
+            <TriangleAlert className="mt-0.5 h-[18px] w-[18px] shrink-0 text-warning" strokeWidth={1.5} />
+            <div>
+              <h2 className="text-base font-semibold text-ink">Setup needed</h2>
+              <p className="mt-1 text-[13px] leading-relaxed text-muted">
+                {settings.setup_hint}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Run now */}
       <Card className="p-6">
         <SectionHeader
@@ -176,6 +191,15 @@ export function Settings() {
           <Row label="Provider" value={settings.provider} />
           <Row label="Model" value={settings.model} mono />
           <Row
+            label="LLM"
+            value={settings.llm_available === false ? 'Not configured' : 'Available'}
+            badge={settings.llm_available === false ? 'warning' : 'success'}
+          />
+          <Row
+            label="RAG"
+            value={settings.vector_rag_available ? 'Vector (Chroma + Gemini)' : 'Keyword (local KB)'}
+          />
+          <Row
             label="Gmail"
             value={settings.gmail_connected ? 'Connected' : 'Not connected'}
             badge={settings.gmail_connected ? 'success' : 'neutral'}
@@ -201,11 +225,19 @@ export function Settings() {
                 demo mailbox, and approving a draft only marks it approved — nothing
                 is sent to a real customer.
               </p>
-            ) : (
+            ) : settings.gmail_connected ? (
               <p className="mt-1 text-[13px] leading-relaxed text-muted">
                 Mailroom is connected to a real Gmail inbox. Runs fetch real mail,
-                drafts are queued for your approval, and approved drafts are sent
-                from the connected account.
+                drafts are queued for your approval, and approved drafts are created
+                as Gmail drafts from the connected account. Nothing is ever sent
+                without your approval.
+              </p>
+            ) : (
+              <p className="mt-1 text-[13px] leading-relaxed text-muted">
+                Mailroom is running live, but no Gmail account is connected yet, so
+                the inbox starts empty. Connect Gmail (see the setup note above) to
+                process your real inbox. Until then, runs process whatever mail is
+                already in the local inbox.
               </p>
             )}
           </div>

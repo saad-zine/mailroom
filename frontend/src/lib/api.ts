@@ -73,6 +73,10 @@ export interface Health {
   model: string;
   gmail_connected: boolean;
   demo: boolean;
+  llm_available?: boolean;
+  vector_rag_available?: boolean;
+  missing_keys?: string[];
+  setup_hint?: string | null;
 }
 
 export interface Stats {
@@ -92,6 +96,10 @@ export interface SettingsInfo {
   gmail_connected: boolean;
   demo_mode: boolean;
   version: string;
+  llm_available?: boolean;
+  vector_rag_available?: boolean;
+  missing_keys?: string[];
+  setup_hint?: string | null;
 }
 
 export class ApiError extends Error {

@@ -100,6 +100,12 @@ def _get_draft_or_404(draft_id: int) -> dict:
 
 
 def _start_run() -> dict:
+    # Live mode without an LLM key: refuse with a clear setup message
+    # instead of starting a run that cannot do real work.
+    if settings.mode == "live" and not settings.llm_available:
+        raise HTTPException(
+            status_code=503,
+            detail=settings.setup_hint or "GROQ_API_KEY is not set.")
     run = create_run()
     thread = threading.Thread(target=run_workflow, args=(run["id"],),
                               daemon=True)
@@ -117,6 +123,10 @@ def health():
         "model": settings.model,
         "gmail_connected": gmail_connected(),
         "demo": settings.demo_mode,
+        "llm_available": settings.llm_available,
+        "vector_rag_available": settings.vector_rag_available,
+        "missing_keys": settings.missing_keys,
+        "setup_hint": settings.setup_hint,
     }
 
 
@@ -128,6 +138,10 @@ def get_settings():
         "model": settings.model,
         "gmail_connected": gmail_connected(),
         "demo_mode": settings.demo_mode,
+        "llm_available": settings.llm_available,
+        "vector_rag_available": settings.vector_rag_available,
+        "missing_keys": settings.missing_keys,
+        "setup_hint": settings.setup_hint,
         "version": VERSION,
     }
 
@@ -317,9 +331,14 @@ def approve_draft(draft_id: int, payload: DraftApprove | None = None):
         gmail_draft_id = (gmail_draft or {}).get("id")
         note = (note + f" [gmail draft: {gmail_draft_id}]") \
             if gmail_draft_id else (note + " [gmail draft creation failed]")
+    elif settings.mode == "live":
+        # Live mode, Gmail not connected: the approval is recorded, but
+        # no Gmail draft exists yet. Say so plainly — this is not mock.
+        note = (note + " [live: Gmail not connected — no Gmail draft created]") \
+            if note else "[live: Gmail not connected — no Gmail draft created]"
     else:
-        note = (note + " [mock: no Gmail draft created]") if note \
-            else "[mock: no Gmail draft created]"
+        note = (note + " [demo: no Gmail draft created]") if note \
+            else "[demo: no Gmail draft created]"
     with connect() as conn:
         conn.execute(
             "UPDATE drafts SET status='approved', decided_by=?, "

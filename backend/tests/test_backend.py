@@ -1,7 +1,17 @@
-"""Mailroom backend tests (mock mode, FastAPI TestClient)."""
+"""Mailroom backend tests (FastAPI TestClient).
+
+The session client runs in explicit mock mode (see conftest.py) so the
+workflow, approval gate and KB are covered end to end with the demo
+engine. The live-mode tests below assert the opposite: with no key the
+app is honest about it — live mode reports the missing key, refuses to
+run, and never seeds fake mail.
+"""
 import io
 
+import pytest
+
 from app import kb
+from app.config import settings
 from app.mock_engine import categorize
 
 
@@ -120,3 +130,78 @@ def test_stats_shape(client):
     assert stats["by_category"]["customer_feedback"] == 1
     assert stats["by_category"]["unrelated"] == 1
     assert stats["pending_drafts"] + stats["approved"] + stats["rejected"] == 6
+
+
+# ---------------------------------------------------------------- live mode
+# These tests flip the (module-level) settings to live with no key and
+# assert the app is honest about it instead of silently faking results.
+# monkeypatch restores the settings after each test, so the mock-mode
+# session client above is unaffected.
+
+def test_live_mode_without_key_reports_setup(client, monkeypatch):
+    monkeypatch.setattr(settings, "mode_setting", "live")
+    monkeypatch.setattr(settings, "groq_api_key", "")
+    health = client.get("/health").json()
+    assert health["mode"] == "live"
+    assert health["llm_available"] is False
+    assert "GROQ_API_KEY" in health["missing_keys"]
+    assert health["setup_hint"] and "GROQ_API_KEY" in health["setup_hint"]
+    assert health["demo"] is False
+    cfg = client.get("/api/settings").json()
+    assert cfg["mode"] == "live"
+    assert cfg["llm_available"] is False
+
+
+def test_live_mode_without_key_refuses_runs(client, monkeypatch):
+    monkeypatch.setattr(settings, "mode_setting", "live")
+    monkeypatch.setattr(settings, "groq_api_key", "")
+    resp = client.post("/api/runs")
+    assert resp.status_code == 503, resp.text
+    assert "GROQ_API_KEY" in resp.json()["detail"]
+
+
+def test_seed_all_skips_mock_emails_in_live_mode(monkeypatch):
+    from app import seed as seed_mod
+
+    calls: list[int] = []
+
+    def _counting_seed() -> int:
+        calls.append(1)
+        return 7
+
+    monkeypatch.setattr(seed_mod, "seed_emails", _counting_seed)
+    monkeypatch.setattr(settings, "mode_setting", "live")
+    seed_mod.seed_all()
+    assert calls == [], "live mode must not seed fake inbox emails"
+    monkeypatch.setattr(settings, "mode_setting", "mock")
+    seed_mod.seed_all()
+    assert calls == [1], "explicit mock mode still seeds the demo inbox"
+
+
+def test_nodes_raise_clear_error_without_llm_in_live_mode():
+    """A node with no LLM chain and no fallback raises a setup error
+    naming the missing key — it never silently produces a template draft."""
+    from agent.nodes import Nodes
+    from agent.state import Email
+
+    nodes = Nodes(fallback=None)  # live mode: no mock fallback
+    assert nodes.agents.categorize_email is None  # no GROQ_API_KEY here
+    email = Email(
+        id="1", threadId="t", messageId="", references="",
+        sender="a@example.com", subject="Pricing?",
+        body="What does the Pro plan cost?")
+    state = {
+        "emails": [email],
+        "current_email": email,
+        "email_category": "product_enquiry",
+        "generated_email": "",
+        "rag_queries": [],
+        "retrieved_documents": "",
+        "writer_messages": [],
+        "sendable": False,
+        "trials": 0,
+    }
+    with pytest.raises(RuntimeError, match="GROQ_API_KEY"):
+        nodes.categorize_email(state)
+    with pytest.raises(RuntimeError, match="GROQ_API_KEY"):
+        nodes.write_draft_email(state)
