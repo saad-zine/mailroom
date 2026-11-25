@@ -226,11 +226,11 @@ export function EmailDetail({
           {!draft ? (
             <EmptyState
               title="No draft yet for this email"
-              subtitle="Automail hasn't drafted a reply for this email yet. Run Automail to process the inbox and generate drafts."
+              subtitle="Mailroom hasn't drafted a reply for this email yet. Run Mailroom to process the inbox and generate drafts."
               action={
                 <Button variant="accent" size="sm" onClick={onGoSettings}>
                   <Play className="h-4 w-4" strokeWidth={1.5} />
-                  Go to Settings to run Automail
+                  Go to Settings to run Mailroom
                 </Button>
               }
             />

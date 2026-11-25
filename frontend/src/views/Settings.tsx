@@ -102,14 +102,14 @@ export function Settings() {
       <div>
         <h1 className="text-[20px] font-semibold text-ink">Settings</h1>
         <p className="mt-0.5 text-[13px] text-muted">
-          How Automail runs, what it runs on, and whether it can reach your inbox.
+          How Mailroom runs, what it runs on, and whether it can reach your inbox.
         </p>
       </div>
 
       {/* Run now */}
       <Card className="p-6">
         <SectionHeader
-          title="Run Automail now"
+          title="Run Mailroom now"
           subtitle="Fetch new mail from the inbox, categorize it, draft replies with RAG, and queue them for your approval. Nothing is sent automatically."
         />
         <div className="flex flex-wrap items-center gap-3">
@@ -169,7 +169,7 @@ export function Settings() {
       <Card className="p-6">
         <SectionHeader
           title="Connection"
-          subtitle="What Automail is connected to right now."
+          subtitle="What Mailroom is connected to right now."
         />
         <dl className="divide-y divide-[#f3f4f6]">
           <Row label="Mode" value={settings.mode} badge={settings.mode === 'mock' ? 'warning' : 'success'} />
@@ -194,7 +194,7 @@ export function Settings() {
             </h2>
             {settings.demo_mode ? (
               <p className="mt-1 text-[13px] leading-relaxed text-muted">
-                Automail is running on demo data — no real Gmail account is connected,
+                Mailroom is running on demo data — no real Gmail account is connected,
                 so the inbox, drafts, and stats you see are sample data. To process
                 your real inbox, connect Gmail: the backend needs a Gmail OAuth
                 connection (gmail.modify scope). Until then, every run processes the
@@ -203,7 +203,7 @@ export function Settings() {
               </p>
             ) : (
               <p className="mt-1 text-[13px] leading-relaxed text-muted">
-                Automail is connected to a real Gmail inbox. Runs fetch real mail,
+                Mailroom is connected to a real Gmail inbox. Runs fetch real mail,
                 drafts are queued for your approval, and approved drafts are sent
                 from the connected account.
               </p>

@@ -78,7 +78,7 @@ export function Dashboard({
           Good {greeting()}, here&apos;s your inbox.
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Automail has drafted replies for your support mail — review them before anything
+          Mailroom has drafted replies for your support mail — review them before anything
           goes out.
         </p>
       </div>
@@ -199,7 +199,7 @@ export function Dashboard({
       <div>
         <SectionHeader
           title="Recent emails"
-          subtitle="The latest mail Automail has seen."
+          subtitle="The latest mail Mailroom has seen."
           action={
             <Button variant="ghost" size="sm" onClick={onGoInbox}>
               View all
@@ -211,7 +211,7 @@ export function Dashboard({
           <Card>
             <EmptyState
               title="No emails yet"
-              subtitle="Run Automail to fetch and process your inbox."
+              subtitle="Run Mailroom to fetch and process your inbox."
             />
           </Card>
         ) : (

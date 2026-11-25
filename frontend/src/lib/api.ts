@@ -108,7 +108,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     res = await fetch(`${BASE}${path}`, init);
   } catch {
     throw new ApiError(
-      `Could not reach the Automail API at ${BASE}. Is the backend running?`,
+      `Could not reach the Mailroom API at ${BASE}. Is the backend running?`,
       0,
     );
   }

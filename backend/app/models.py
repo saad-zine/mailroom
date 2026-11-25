@@ -1,4 +1,4 @@
-"""Pydantic request/response models for the Automail API."""
+"""Pydantic request/response models for the Mailroom API."""
 from typing import List, Optional
 
 from pydantic import BaseModel, Field

@@ -50,7 +50,7 @@ export function Queue({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
       <div>
         <h1 className="text-[20px] font-semibold text-ink">Approval queue</h1>
         <p className="mt-0.5 text-[13px] text-muted">
-          Every draft Automail wrote, waiting for a human decision. Nothing is sent
+          Every draft Mailroom wrote, waiting for a human decision. Nothing is sent
           without your approval.
         </p>
       </div>
@@ -81,7 +81,7 @@ export function Queue({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
             }
             subtitle={
               status === 'pending'
-                ? 'No drafts are waiting for review. New mail will appear here once Automail drafts a reply.'
+                ? 'No drafts are waiting for review. New mail will appear here once Mailroom drafts a reply.'
                 : 'Try a different status filter.'
             }
           />

@@ -1,4 +1,4 @@
-"""Vercel serverless entrypoint for the Automail API.
+"""Vercel serverless entrypoint for the Mailroom API.
 
 Vercel's Python runtime treats api/index.py as a serverless function; when it
 finds an ASGI `app` object it serves it. The FastAPI application lives in
@@ -7,7 +7,7 @@ backend/, so that directory is added to sys.path. vercel.json rewrites
 app's /api/... routes match as usual.
 
 Environment variables are set in the Vercel dashboard (see README.md).
-On Vercel the filesystem is ephemeral: set AUTOMAIL_DB_PATH=/tmp/automail.db
+On Vercel the filesystem is ephemeral: set MAILROOM_DB_PATH=/tmp/mailroom.db
 so the SQLite store has a writable location (it re-seeds on cold start).
 """
 

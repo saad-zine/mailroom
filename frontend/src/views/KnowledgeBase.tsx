@@ -92,7 +92,7 @@ export function KnowledgeBase() {
       <div>
         <h1 className="text-[20px] font-semibold text-ink">Knowledge base</h1>
         <p className="mt-0.5 text-[13px] text-muted">
-          The docs Automail answers from. Upload product guides, FAQs, and policies —
+          The docs Mailroom answers from. Upload product guides, FAQs, and policies —
           drafts cite them when replying.
         </p>
       </div>
@@ -165,7 +165,7 @@ export function KnowledgeBase() {
         <Card>
           <EmptyState
             title="No documents yet"
-            subtitle="Upload your first document so Automail can answer product questions from your own docs, not from thin air."
+            subtitle="Upload your first document so Mailroom can answer product questions from your own docs, not from thin air."
             action={
               <Button
                 variant="secondary"

@@ -34,12 +34,12 @@ export function Sidebar({
         className="flex cursor-pointer items-center gap-2.5 px-5 pt-5 pb-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30 rounded-lg mx-2"
       >
         <img
-          src="/automail-icon.png"
-          alt="Automail"
+          src="/mailroom-icon.png"
+          alt="Mailroom"
           className="h-8 w-8 shrink-0"
         />
         <span className="leading-tight">
-          <span className="block text-[15px] font-bold text-ink">Automail</span>
+          <span className="block text-[15px] font-bold text-ink">Mailroom</span>
           <span className="block text-[11px] text-muted">AI email copilot</span>
         </span>
       </button>

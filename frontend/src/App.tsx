@@ -69,7 +69,7 @@ export default function App() {
           <div className="mx-auto w-full max-w-[1100px] px-6 py-6">
             {!apiReachable && view !== 'settings' && (
               <p className="mb-5 rounded-lg border border-border bg-tint-warning px-4 py-2.5 text-[13px] text-warning">
-                The Automail API is not reachable — views below will show an error
+                The Mailroom API is not reachable — views below will show an error
                 until the backend is running. Start it on port 8000, or set
                 VITE_API_URL to its address.
               </p>

@@ -59,7 +59,7 @@ export function Inbox({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
       <div>
         <h1 className="text-[20px] font-semibold text-ink">Inbox</h1>
         <p className="mt-0.5 text-[13px] text-muted">
-          Every email Automail has categorized. Open one to review its draft.
+          Every email Mailroom has categorized. Open one to review its draft.
         </p>
       </div>
 
@@ -100,7 +100,7 @@ export function Inbox({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
             title="No emails match these filters"
             subtitle={
               emails.length === 0
-                ? 'The inbox is empty. Run Automail to fetch and process mail.'
+                ? 'The inbox is empty. Run Mailroom to fetch and process mail.'
                 : 'Try a different category or status filter.'
             }
             action={

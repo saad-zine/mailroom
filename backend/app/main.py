@@ -1,4 +1,4 @@
-"""Automail FastAPI app.
+"""Mailroom FastAPI app.
 
 API contract (frozen — a frontend is building against it):
   GET  /health, /api/emails, /api/emails/{id}, /api/runs/{id},
@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Automail — AI email copilot for customer support",
+app = FastAPI(title="Mailroom — AI email copilot for customer support",
               version=VERSION, lifespan=lifespan)
 # Belt and braces: the tables must exist even if a caller never runs the
 # lifespan (e.g. TestClient used without a context manager).

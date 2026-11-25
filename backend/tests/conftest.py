@@ -10,14 +10,14 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
 # Isolated DBs — set BEFORE importing the app (settings reads env at import).
-TMP = Path(os.environ.get("TMPDIR", "/tmp")) / "automail-test"
+TMP = Path(os.environ.get("TMPDIR", "/tmp")) / "mailroom-test"
 TMP.mkdir(parents=True, exist_ok=True)
-os.environ["AUTOMAIL_DB_PATH"] = str(TMP / "test-automail.db")
-os.environ["AUTOMAIL_CHECKPOINTS_PATH"] = str(TMP / "test-checkpoints.db")
-os.environ["AUTOMAIL_MODE"] = "mock"
+os.environ["MAILROOM_DB_PATH"] = str(TMP / "test-mailroom.db")
+os.environ["MAILROOM_CHECKPOINTS_PATH"] = str(TMP / "test-checkpoints.db")
+os.environ["MAILROOM_MODE"] = "mock"
 os.environ.pop("GROQ_API_KEY", None)
 os.environ.pop("GOOGLE_API_KEY", None)
-for f in ("test-automail.db", "test-automail.db-wal", "test-automail.db-shm",
+for f in ("test-mailroom.db", "test-mailroom.db-wal", "test-mailroom.db-shm",
           "test-checkpoints.db"):
     p = TMP / f
     if p.exists():
