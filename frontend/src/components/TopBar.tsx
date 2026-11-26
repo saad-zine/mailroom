@@ -1,4 +1,3 @@
-import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/csr/EnvelopeSimple';
 import { MoonIcon } from '@phosphor-icons/react/dist/csr/Moon';
 import { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
 
@@ -19,7 +18,7 @@ export function TopBar({
         aria-label="Mailroom home"
         className="flex cursor-pointer items-center gap-2.5 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
       >
-        <EnvelopeSimpleIcon size={24} weight="bold" aria-hidden="true" />
+        <img src="/mailroom-bot-mark.png" alt="" className="size-10 object-contain" aria-hidden="true" />
         <span className="text-[17px] font-bold tracking-[-0.04em]">Mailroom</span>
       </button>
       <button

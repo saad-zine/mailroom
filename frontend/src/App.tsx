@@ -90,6 +90,8 @@ export default function App() {
                   onOpenEmail={(id) => openEmail(id, 'dashboard')}
                   onGoInbox={() => navigate('inbox')}
                   onGoQueue={() => navigate('queue')}
+                  onGoKnowledgeBase={() => navigate('kb')}
+                  onGoSettings={() => navigate('settings')}
                 />
               )}
               {view === 'inbox' && <Inbox onOpenEmail={(id) => openEmail(id, 'inbox')} />}
