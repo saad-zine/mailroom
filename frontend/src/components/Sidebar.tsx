@@ -101,13 +101,13 @@ export function Sidebar({
           {renderItems()}
         </nav>
 
-        <div className="mx-4 mb-4 rounded-2xl border border-border bg-wash p-4">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold text-ink">
+        <div className="mx-5 mb-5 border-t border-border pt-4">
+          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold text-ink">
             <span className="size-1.5 rounded-full bg-teal" aria-hidden="true" />
-            Human-reviewed by design
+            Human review required
           </div>
           <p className="text-[11px] leading-relaxed text-muted">
-            Every reply stays in your hands until you approve it.
+            Replies remain drafts until you approve them.
           </p>
         </div>
       </aside>

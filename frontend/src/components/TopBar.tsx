@@ -92,10 +92,10 @@ export function TopBar({
 export function SetupBanner({ health }: { health: Health | null }) {
   if (!health || health.mode !== 'live' || !health.setup_hint) return null;
   return (
-    <div role="status" className="flex items-start gap-3 border-b border-warning/20 bg-tint-warning px-4 py-3 text-warning sm:px-6 lg:px-8">
-      <TriangleAlert className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-      <p className="text-xs leading-relaxed sm:text-[13px]">
-        <span className="font-semibold">Setup needed</span><span className="mx-1.5 opacity-60">·</span>{health.setup_hint}
+    <div role="status" className="flex items-start gap-3 border-b border-border bg-paper/60 px-4 py-2 text-muted sm:px-6 lg:px-8">
+      <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" strokeWidth={1.8} aria-hidden="true" />
+      <p className="text-xs leading-relaxed sm:text-[12px]">
+        <span className="font-semibold text-warning">Setup needed</span><span className="mx-1.5 text-faint">·</span>{health.setup_hint}
       </p>
     </div>
   );
@@ -104,10 +104,10 @@ export function SetupBanner({ health }: { health: Health | null }) {
 export function DemoBanner({ health }: { health: Health | null }) {
   if (!health || health.mode !== 'mock') return null;
   return (
-    <div role="status" className="flex items-start gap-3 border-b border-warning/20 bg-tint-warning px-4 py-3 text-warning sm:px-6 lg:px-8">
-      <FlaskConical className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-      <p className="text-xs leading-relaxed sm:text-[13px]">
-        <span className="font-semibold">Demo data</span><span className="mx-1.5 opacity-60">·</span>No real Gmail connected. Connect Gmail in Settings to process your real inbox.
+    <div role="status" className="flex items-start gap-3 border-b border-border bg-paper/60 px-4 py-2 text-muted sm:px-6 lg:px-8">
+      <FlaskConical className="mt-0.5 size-4 shrink-0 text-warning" strokeWidth={1.8} aria-hidden="true" />
+      <p className="text-xs leading-relaxed sm:text-[12px]">
+        <span className="font-semibold text-warning">Demo data</span><span className="mx-1.5 text-faint">·</span>No real Gmail connected. Connect Gmail in Settings to process your real inbox.
       </p>
     </div>
   );

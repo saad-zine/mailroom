@@ -12,7 +12,7 @@ import { Settings } from './views/Settings';
 type Theme = 'light' | 'dark';
 
 function getInitialTheme(): Theme {
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 }
 
 export type View = 'dashboard' | 'inbox' | 'queue' | 'kb' | 'settings' | 'detail';
@@ -84,7 +84,7 @@ export default function App() {
         <DemoBanner health={health} />
         <SetupBanner health={health} />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1360px] px-4 py-6 pb-28 sm:px-6 sm:py-8 lg:px-8 lg:pb-10">
+          <div className="mx-auto w-full max-w-[1080px] px-4 py-6 pb-28 sm:px-6 sm:py-8 lg:px-8 lg:pb-10">
             {!apiReachable && view !== 'settings' && (
               <p className="mb-5 rounded-lg border border-border bg-tint-warning px-4 py-2.5 text-[13px] text-warning">
                 The Mailroom API is not reachable — views below will show an error

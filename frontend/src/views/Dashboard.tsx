@@ -72,46 +72,55 @@ export function Dashboard({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col items-center gap-5 pt-5 pb-2 text-center sm:pt-10">
+        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+          <span className="flex size-7 items-center justify-center rounded-full bg-tint-teal text-teal">
+            <Mail className="size-4" strokeWidth={1.8} aria-hidden="true" />
+          </span>
+          Mailroom
+        </div>
         <div>
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-teal">Workspace overview</p>
-          <h1 className="text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[34px]">
-            Good {greeting()}, here&apos;s your inbox.
+          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[38px]">
+            What should Mailroom take care of?
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-            A clear view of your team&apos;s incoming mail, draft replies, and approval workload.
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-[15px]">
+            A calm view of incoming mail, drafts, and the decisions that need your attention.
           </p>
         </div>
-        <div className="hidden shrink-0 items-center gap-2 rounded-full border border-border bg-paper px-3.5 py-2 text-xs font-medium text-muted shadow-sm sm:flex">
-          <span className="size-2 rounded-full bg-teal" aria-hidden="true" />
-          Human review enabled
+        <div className="flex w-full max-w-[760px] flex-col gap-2 rounded-[28px] border border-border bg-paper p-2.5 sm:flex-row sm:items-center sm:rounded-full sm:py-2 sm:pr-2 sm:pl-4">
+          <span className="hidden size-9 shrink-0 items-center justify-center rounded-full bg-wash text-muted sm:flex">
+            <InboxIcon className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
+          </span>
+          <p className="min-w-0 flex-1 px-2 text-left text-[13px] text-muted sm:px-0 sm:text-sm">
+            Your inbox is ready for a review.
+          </p>
+          <Button variant="accent" size="md" onClick={onGoInbox} className="w-full rounded-full sm:w-auto">
+            Open inbox
+            <ArrowRight className="size-4" strokeWidth={1.8} aria-hidden="true" />
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-4">
         <StatCard
-          icon={<Mail className="size-5" strokeWidth={1.8} />}
-          tone="info"
+          icon={<Mail className="size-4" strokeWidth={1.8} aria-hidden="true" />}
           label="Total emails"
           value={String(stats.total_emails)}
         />
         <StatCard
-          icon={<CheckSquare className="size-5" strokeWidth={1.8} />}
-          tone="warning"
+          icon={<CheckSquare className="size-4" strokeWidth={1.8} aria-hidden="true" />}
           label="Pending drafts"
           value={String(stats.pending_drafts)}
           accent={stats.pending_drafts > 0}
         />
         <StatCard
-          icon={<Percent className="size-5" strokeWidth={1.8} />}
-          tone="success"
+          icon={<Percent className="size-4" strokeWidth={1.8} aria-hidden="true" />}
           label="Approval rate"
           value={`${approvalPct}%`}
           sub={`${stats.approved} approved · ${stats.rejected} rejected`}
         />
         <StatCard
-          icon={<InboxIcon className="size-5" strokeWidth={1.8} />}
-          tone="teal"
+          icon={<InboxIcon className="size-4" strokeWidth={1.8} aria-hidden="true" />}
           label="Avg. first response"
           value={
             stats.avg_first_response_min == null
@@ -260,47 +269,29 @@ export function Dashboard({
   );
 }
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 18) return 'afternoon';
-  return 'evening';
-}
-
 function StatCard({
   icon,
-  tone,
   label,
   value,
   sub,
   accent,
 }: {
   icon: React.ReactNode;
-  tone: 'info' | 'warning' | 'success' | 'teal';
   label: string;
   value: string;
   sub?: string;
   accent?: boolean;
 }) {
-  const toneStyles = {
-    info: 'bg-tint-info text-info',
-    warning: 'bg-tint-warning text-warning',
-    success: 'bg-tint-success text-success',
-    teal: 'bg-tint-teal text-teal',
-  };
-
   return (
-    <Card className="p-4 transition-shadow hover:shadow-md sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <p className="pt-1 text-[12px] font-semibold tracking-[0.01em] text-muted">{label}</p>
-        <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${toneStyles[tone]}`}>
-          {icon}
-        </span>
+    <div className="min-h-[112px] bg-paper px-4 py-4 sm:px-5">
+      <div className="flex items-center gap-2 text-muted">
+        {icon}
+        <p className="text-[11px] font-medium tracking-[0.01em] sm:text-xs">{label}</p>
       </div>
-      <p className="mt-4 text-[32px] font-semibold leading-none tracking-[-0.05em] text-ink tabular-nums">{value}</p>
-      <div className="mt-2 min-h-5 text-xs text-muted">
-        {sub ?? (accent ? <span className="font-semibold text-warning">Needs your review</span> : null)}
-      </div>
-    </Card>
+      <p className="mt-4 text-[26px] font-semibold leading-none tracking-[-0.04em] text-ink tabular-nums">{value}</p>
+      <p className="mt-1 min-h-4 text-[11px] leading-relaxed text-muted">
+        {sub ?? (accent ? <span className="font-medium text-warning">Needs review</span> : null)}
+      </p>
+    </div>
   );
 }

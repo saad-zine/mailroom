@@ -130,7 +130,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={cn('rounded-2xl border border-border bg-paper shadow-sm transition-shadow duration-200', className)}>
+    <div className={cn('rounded-2xl border border-border bg-paper shadow-none transition-colors duration-200', className)}>
       {children}
     </div>
   );
