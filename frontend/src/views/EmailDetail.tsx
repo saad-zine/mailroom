@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-import {
-  ArrowLeft,
-  BookOpen,
-  Check,
-  MessageSquareQuote,
-  Play,
-  Save,
-  X,
-} from 'lucide-react';
+import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
+import { BookOpenTextIcon } from '@phosphor-icons/react/dist/csr/BookOpenText';
+import { ChatCenteredTextIcon } from '@phosphor-icons/react/dist/csr/ChatCenteredText';
+import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
+import { FloppyDiskIcon } from '@phosphor-icons/react/dist/csr/FloppyDisk';
+import { PlayIcon } from '@phosphor-icons/react/dist/csr/Play';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { api, ApiError, type Draft, type EmailItem, type RagChunk } from '../lib/api';
 import { formatDateTime, initials } from '../lib/utils';
 import {
@@ -173,7 +171,7 @@ export function EmailDetail({
               </p>
             </div>
           </div>
-          <div className="mt-5 border-t border-[#f3f4f6] pt-5">
+          <div className="mt-5 border-t border-border pt-5">
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">
               {email.body || email.snippet}
             </p>
@@ -183,7 +181,7 @@ export function EmailDetail({
         {/* RAG context */}
         <Card className="p-6">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-[18px] w-[18px] text-muted" strokeWidth={1.5} />
+            <BookOpenTextIcon className="h-[18px] w-[18px] text-muted" weight="regular" />
             <h2 className="text-base font-semibold text-ink">What the draft used</h2>
           </div>
           <p className="mt-1 text-[13px] text-muted">
@@ -229,7 +227,7 @@ export function EmailDetail({
               subtitle="Mailroom hasn't drafted a reply for this email yet. Run Mailroom to process the inbox and generate drafts."
               action={
                 <Button variant="accent" size="sm" onClick={onGoSettings}>
-                  <Play className="h-4 w-4" strokeWidth={1.5} />
+                  <PlayIcon className="h-4 w-4" weight="regular" />
                   Go to Settings to run Mailroom
                 </Button>
               }
@@ -238,10 +236,11 @@ export function EmailDetail({
             <>
               {/* Proofreader feedback */}
               {draft.proofreader_feedback && (
-                <div className="mt-4 flex gap-3 rounded-lg border border-[#fde68a]/60 bg-tint-warning px-4 py-3">
-                  <MessageSquareQuote
+                <div className="mt-4 flex gap-3 rounded-xl border border-warning/25 bg-tint-warning px-4 py-3">
+<ChatCenteredTextIcon
                     className="mt-0.5 h-[18px] w-[18px] shrink-0 text-warning"
-                    strokeWidth={1.5}
+                    weight="regular"
+                    aria-hidden="true"
                   />
                   <div>
                     <p className="text-[13px] font-medium text-ink">
@@ -324,7 +323,7 @@ export function EmailDetail({
                   disabled={decided}
                   loading={deciding}
                 >
-                  <Check className="h-4 w-4" strokeWidth={1.5} />
+                  <CheckIcon className="h-4 w-4" weight="regular" />
                   Approve
                 </Button>
                 <Button
@@ -332,7 +331,7 @@ export function EmailDetail({
                   onClick={() => setShowReject(true)}
                   disabled={decided}
                 >
-                  <X className="h-4 w-4" strokeWidth={1.5} />
+                  <XIcon className="h-4 w-4" weight="regular" />
                   Reject
                 </Button>
                 <Button
@@ -341,7 +340,7 @@ export function EmailDetail({
                   disabled={decided || !bodyDirty}
                   loading={saving}
                 >
-                  <Save className="h-4 w-4" strokeWidth={1.5} />
+                  <FloppyDiskIcon className="h-4 w-4" weight="regular" />
                   Save edits
                 </Button>
                 {bodyDirty && !decided && (
@@ -412,7 +411,7 @@ function DetailShell({
         onClick={onBack}
         className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-wash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30"
       >
-        <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+        <ArrowLeftIcon className="h-4 w-4" weight="regular" />
         Back
       </button>
       {children}

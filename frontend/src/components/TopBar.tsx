@@ -1,78 +1,35 @@
-import { FlaskConical, Home, MailWarning } from 'lucide-react';
-import type { Health } from '../lib/api';
-import type { View } from '../App';
-import { Badge } from './ui';
-
-const VIEW_TITLES: Record<View, string> = {
-  dashboard: 'Dashboard',
-  inbox: 'Inbox',
-  queue: 'Approval queue',
-  kb: 'Knowledge base',
-  settings: 'Settings',
-  detail: 'Email',
-};
+import { MoonIcon } from '@phosphor-icons/react/dist/csr/Moon';
+import { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
 
 export function TopBar({
-  view,
-  health,
-  apiReachable,
+  theme,
+  onToggleTheme,
+  onNavigateHome,
 }: {
-  view: View;
-  health: Health | null;
-  apiReachable: boolean;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+  onNavigateHome: () => void;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-paper px-6">
-      <div className="flex items-center gap-2 text-sm">
-        <Home className="h-4 w-4 text-muted" strokeWidth={1.5} />
-        <span className="text-muted">/</span>
-        <span className="font-medium text-ink">{VIEW_TITLES[view]}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        {!apiReachable ? (
-          <Badge tone="error">
-            <MailWarning className="h-3.5 w-3.5" strokeWidth={1.5} />
-            API unreachable
-          </Badge>
-        ) : health ? (
-          health.mode === 'mock' ? (
-            <Badge tone="warning">
-              <FlaskConical className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Demo mode
-            </Badge>
-          ) : health.llm_available === false ? (
-            <Badge tone="warning">
-              <FlaskConical className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Setup needed
-            </Badge>
-          ) : (
-            <Badge tone="success">Live · {health.provider}</Badge>
-          )
-        ) : null}
-      </div>
+    <header className="sticky top-0 z-40 flex h-[70px] shrink-0 items-center justify-between border-b border-white/10 bg-chrome px-5 text-chrome-foreground sm:px-7">
+      <button
+        type="button"
+        onClick={onNavigateHome}
+        aria-label="Mailroom home"
+        className="flex cursor-pointer items-center gap-2.5 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+      >
+        <img src="/mailroom-bot-mark.png" alt="" className="size-10 object-contain" aria-hidden="true" />
+        <span className="text-[17px] font-bold tracking-[-0.04em]">Mailroom</span>
+      </button>
+      <button
+        type="button"
+        onClick={onToggleTheme}
+        aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+      >
+        {theme === 'dark' ? <SunIcon size={19} weight="regular" aria-hidden="true" /> : <MoonIcon size={19} weight="regular" aria-hidden="true" />}
+      </button>
     </header>
-  );
-}
-
-export function SetupBanner({ health }: { health: Health | null }) {
-  if (!health || health.mode !== 'live' || !health.setup_hint) return null;
-  return (
-    <div className="border-b border-border bg-tint-warning px-6 py-2.5">
-      <p className="text-[13px] text-warning">
-        <span className="font-medium">Setup needed</span> — {health.setup_hint}
-      </p>
-    </div>
-  );
-}
-
-export function DemoBanner({ health }: { health: Health | null }) {
-  if (!health || health.mode !== 'mock') return null;
-  return (
-    <div className="border-b border-border bg-tint-warning px-6 py-2.5">
-      <p className="text-[13px] text-warning">
-        <span className="font-medium">Demo data</span> — no real Gmail connected.
-        Connect Gmail in Settings to process your real inbox.
-      </p>
-    </div>
   );
 }

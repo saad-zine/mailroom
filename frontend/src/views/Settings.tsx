@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Check,
-  CircleDashed,
-  Loader2,
-  Mail,
-  Play,
-  TriangleAlert,
-  X,
-} from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
+import { CircleDashedIcon } from '@phosphor-icons/react/dist/csr/CircleDashed';
+import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/csr/EnvelopeSimple';
+import { PlayIcon } from '@phosphor-icons/react/dist/csr/Play';
+import { SpinnerGapIcon } from '@phosphor-icons/react/dist/csr/SpinnerGap';
+import { WarningCircleIcon } from '@phosphor-icons/react/dist/csr/WarningCircle';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { api, type Run, type SettingsInfo } from '../lib/api';
 import { formatDateTime } from '../lib/utils';
 import {
@@ -16,6 +14,7 @@ import {
   Card,
   ErrorState,
   LoadingState,
+  PageHeader,
   SectionHeader,
 } from '../components/ui';
 
@@ -99,27 +98,10 @@ export function Settings() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-[20px] font-semibold text-ink">Settings</h1>
-        <p className="mt-0.5 text-[13px] text-muted">
-          How Mailroom runs, what it runs on, and whether it can reach your inbox.
-        </p>
-      </div>
-
-      {/* Setup needed — live mode without its API key */}
-      {settings.setup_hint && (
-        <Card className="border border-border bg-tint-warning p-6">
-          <div className="flex items-start gap-3">
-            <TriangleAlert className="mt-0.5 h-[18px] w-[18px] shrink-0 text-warning" strokeWidth={1.5} />
-            <div>
-              <h2 className="text-base font-semibold text-ink">Setup needed</h2>
-              <p className="mt-1 text-[13px] leading-relaxed text-muted">
-                {settings.setup_hint}
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
+      <PageHeader
+        title="Settings"
+        description="How Mailroom runs, what it runs on, and whether it can reach your inbox."
+      />
 
       {/* Run now */}
       <Card className="p-6">
@@ -129,7 +111,7 @@ export function Settings() {
         />
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="accent" onClick={() => void startRun()} disabled={running} loading={running}>
-            <Play className="h-4 w-4" strokeWidth={1.5} />
+            <PlayIcon className="h-4 w-4" weight="regular" />
             {running ? 'Running…' : 'Run now'}
           </Button>
           {run && (
@@ -186,7 +168,7 @@ export function Settings() {
           title="Connection"
           subtitle="What Mailroom is connected to right now."
         />
-        <dl className="divide-y divide-[#f3f4f6]">
+        <dl className="divide-y divide-border">
           <Row label="Mode" value={settings.mode} badge={settings.mode === 'mock' ? 'warning' : 'success'} />
           <Row label="Provider" value={settings.provider} />
           <Row label="Model" value={settings.model} mono />
@@ -211,7 +193,7 @@ export function Settings() {
       {/* Demo mode explanation */}
       <Card className="p-6">
         <div className="flex items-start gap-3">
-          <Mail className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted" strokeWidth={1.5} />
+          <EnvelopeSimpleIcon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted" weight="regular" aria-hidden="true" />
           <div>
             <h2 className="text-base font-semibold text-ink">
               {settings.demo_mode ? 'Demo mode is on' : 'Live mode'}
@@ -234,10 +216,9 @@ export function Settings() {
               </p>
             ) : (
               <p className="mt-1 text-[13px] leading-relaxed text-muted">
-                Mailroom is running live, but no Gmail account is connected yet, so
-                the inbox starts empty. Connect Gmail (see the setup note above) to
-                process your real inbox. Until then, runs process whatever mail is
-                already in the local inbox.
+                Live mode is active, but no Gmail account is connected, so the inbox
+                starts empty. Configure the Gmail OAuth credentials to process your
+                real inbox; existing local messages remain available in the meantime.
               </p>
             )}
           </div>
@@ -279,26 +260,26 @@ function StepIcon({ status }: { status: string }) {
   if (s === 'completed' || s === 'done' || s === 'success') {
     return (
       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-tint-success">
-        <Check className="h-3.5 w-3.5 text-success" strokeWidth={1.5} />
+        <CheckIcon className="h-3.5 w-3.5 text-success" weight="regular" />
       </span>
     );
   }
   if (s === 'failed' || s === 'error') {
     return (
       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-tint-error">
-        <X className="h-3.5 w-3.5 text-error" strokeWidth={1.5} />
+        <XIcon className="h-3.5 w-3.5 text-error" weight="regular" />
       </span>
     );
   }
   if (s === 'running' || s === 'in_progress') {
-    return <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-teal" strokeWidth={1.5} />;
+    return <SpinnerGapIcon className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-teal" weight="regular" />;
   }
   if (s === 'skipped' || s === 'warning') {
     return (
-      <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-warning" strokeWidth={1.5} />
+      <WarningCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-warning" weight="regular" />
     );
   }
   return (
-    <CircleDashed className="mt-0.5 h-5 w-5 shrink-0 text-faint" strokeWidth={1.5} />
+    <CircleDashedIcon className="mt-0.5 h-5 w-5 shrink-0 text-faint" weight="regular" />
   );
 }

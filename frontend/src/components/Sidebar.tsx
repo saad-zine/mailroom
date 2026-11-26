@@ -1,19 +1,17 @@
-import {
-  BookOpen,
-  CheckSquare,
-  Home,
-  Inbox,
-  Settings,
-} from 'lucide-react';
+import { BookOpenTextIcon } from '@phosphor-icons/react/dist/csr/BookOpenText';
+import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText';
+import { GearSixIcon } from '@phosphor-icons/react/dist/csr/GearSix';
+import { HouseIcon } from '@phosphor-icons/react/dist/csr/House';
+import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { cn } from '../lib/utils';
 import type { View } from '../App';
 
-const NAV: Array<{ id: View; label: string; icon: typeof Home }> = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home },
-  { id: 'inbox', label: 'Inbox', icon: Inbox },
-  { id: 'queue', label: 'Approval queue', icon: CheckSquare },
-  { id: 'kb', label: 'Knowledge base', icon: BookOpen },
-  { id: 'settings', label: 'Settings', icon: Settings },
+const NAV: Array<{ id: View; label: string; icon: typeof HouseIcon }> = [
+  { id: 'dashboard', label: 'Home', icon: HouseIcon },
+  { id: 'inbox', label: 'Inbox', icon: TrayIcon },
+  { id: 'queue', label: 'Approval queue', icon: ClipboardTextIcon },
+  { id: 'kb', label: 'Knowledge base', icon: BookOpenTextIcon },
+  { id: 'settings', label: 'Settings', icon: GearSixIcon },
 ];
 
 export function Sidebar({
@@ -25,64 +23,70 @@ export function Sidebar({
   onNavigate: (view: View) => void;
   pendingCount: number;
 }) {
+  const renderItems = (mobile = false) =>
+    NAV.map((item) => {
+      const Icon = item.icon;
+      const active = view === item.id;
+
+      return (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => onNavigate(item.id)}
+          aria-current={active ? 'page' : undefined}
+          className={cn(
+            'group relative flex cursor-pointer items-center rounded-[10px] font-medium transition-colors duration-150',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/40',
+            mobile
+              ? 'min-w-0 flex-1 flex-col gap-1 px-1 py-2 text-[9px] sm:text-[10px]'
+              : 'w-full gap-3 px-3 py-[9px] text-sm',
+            active
+              ? 'bg-paper text-ink shadow-sm'
+              : 'text-body hover:bg-white/60 hover:text-ink',
+          )}
+        >
+          <Icon
+            size={mobile ? 19 : 20}
+            weight={active ? 'fill' : 'regular'}
+            className={cn('shrink-0', active ? 'text-ink' : 'text-body')}
+            aria-hidden="true"
+          />
+          <span className={cn('min-w-0', mobile ? 'w-full truncate text-center' : 'flex-1 text-left')}>
+            {mobile
+              ? item.id === 'dashboard'
+                ? 'Home'
+                : item.id === 'queue'
+                  ? 'Queue'
+                  : item.id === 'kb'
+                    ? 'Docs'
+                    : item.label
+              : item.label}
+          </span>
+          {item.id === 'queue' && pendingCount > 0 && !mobile && (
+            <span className="rounded-full bg-neutral-tint px-2 py-0.5 text-[11px] font-semibold tabular-nums text-body">
+              {pendingCount}
+            </span>
+          )}
+          {item.id === 'queue' && pendingCount > 0 && mobile && (
+            <span className="absolute right-2 top-1.5 size-1.5 rounded-full bg-teal" aria-hidden="true" />
+          )}
+        </button>
+      );
+    });
+
   return (
-    <aside className="flex w-[220px] shrink-0 flex-col border-r border-border bg-wash">
-      {/* Logo */}
-      <button
-        type="button"
-        onClick={() => onNavigate('dashboard')}
-        className="flex cursor-pointer items-center gap-2.5 px-5 pt-5 pb-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30 rounded-lg mx-2"
+    <>
+      <aside className="sticky top-[70px] hidden h-[calc(100vh-70px)] w-[280px] shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
+        <nav aria-label="Primary navigation" className="flex flex-1 flex-col gap-0.5 px-3 pt-3">
+          {renderItems()}
+        </nav>
+      </aside>
+      <nav
+        aria-label="Mobile navigation"
+        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-paper/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
       >
-        <img
-          src="/mailroom-icon.png"
-          alt="Mailroom"
-          className="h-8 w-8 shrink-0"
-        />
-        <span className="leading-tight">
-          <span className="block text-[15px] font-bold text-ink">Mailroom</span>
-          <span className="block text-[11px] text-muted">AI email copilot</span>
-        </span>
-      </button>
-
-      {/* Nav */}
-      <nav className="flex-1 space-y-0.5 px-3">
-        {NAV.map((item) => {
-          const Icon = item.icon;
-          const active = view === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onNavigate(item.id)}
-              className={cn(
-                'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors duration-150',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30',
-                active
-                  ? 'bg-neutral-tint font-medium text-ink'
-                  : 'text-body hover:bg-neutral-tint/60',
-              )}
-            >
-              <Icon
-                className={cn('h-4 w-4', active ? 'text-ink' : 'text-muted')}
-                strokeWidth={1.5}
-              />
-              <span className="flex-1 text-left">{item.label}</span>
-              {item.id === 'queue' && pendingCount > 0 && (
-                <span className="rounded-full bg-tint-warning px-2 py-0.5 text-[11px] font-medium text-warning">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          );
-        })}
+        {renderItems(true)}
       </nav>
-
-      {/* Footer */}
-      <div className="px-5 py-4">
-        <p className="text-xs leading-relaxed text-faint">
-          The inbox that answers itself — with a human in the loop.
-        </p>
-      </div>
-    </aside>
+    </>
   );
 }

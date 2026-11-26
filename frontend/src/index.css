@@ -1,49 +1,119 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-@theme {
+@theme inline {
   --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-canvas: var(--canvas);
+  --color-chrome: var(--chrome);
+  --color-chrome-foreground: var(--chrome-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-paper: var(--paper);
+  --color-wash: var(--wash);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-teal: var(--teal);
+  --color-teal-foreground: var(--teal-foreground);
+  --color-tint-teal: var(--tint-teal);
+  --color-success: var(--success);
+  --color-tint-success: var(--tint-success);
+  --color-warning: var(--warning);
+  --color-tint-warning: var(--tint-warning);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-tint-error: var(--tint-error);
+  --color-info: var(--info);
+  --color-tint-info: var(--tint-info);
+  --color-neutral-tint: var(--neutral-tint);
+}
 
-  /* Mailroom palette — Clean design system (Attio/folk style) */
-  --color-ink: #111111;
-  --color-body: #333333;
-  --color-muted: #6b7280;
-  --color-faint: #9ca3af;
-  --color-paper: #ffffff;
-  --color-wash: #fafafa;
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-  --color-teal: #0d9488;
-  --color-tint-teal: #f0fdf9;
-  --color-success: #16a34a;
-  --color-tint-success: #f0fdf4;
-  --color-warning: #d97706;
-  --color-tint-warning: #fffbeb;
-  --color-error: #dc2626;
-  --color-tint-error: #fef2f2;
-  --color-info: #2563eb;
-  --color-tint-info: #eff6ff;
-  --color-neutral-tint: #f3f4f6;
+:root {
+  color-scheme: light;
+  --canvas: #f7f7f7;
+  --chrome: #171717;
+  --chrome-foreground: #f7f7f7;
+  --sidebar: #ededed;
+  --ink: #303030;
+  --body: #424242;
+  --muted: #616161;
+  --faint: #8a8a8a;
+  --paper: #ffffff;
+  --wash: #f6f6f7;
+  --border: #e3e3e3;
+  --border-strong: #c9c9c9;
+  --teal: #005bd3;
+  --teal-foreground: #ffffff;
+  --tint-teal: #eaf2ff;
+  --success: #168354;
+  --tint-success: #eaf7f0;
+  --warning: #a45e08;
+  --tint-warning: #fff5e5;
+  --error: #bd3f42;
+  --error-foreground: #ffffff;
+  --tint-error: #fff0f0;
+  --info: #356db2;
+  --tint-info: #edf4fc;
+  --neutral-tint: #eeeeee;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: #171717;
+  --chrome: #101010;
+  --chrome-foreground: #f7f7f7;
+  --sidebar: #202020;
+  --ink: #f2f2f2;
+  --body: #d0d0d0;
+  --muted: #a6a6a6;
+  --faint: #858585;
+  --paper: #222222;
+  --wash: #262626;
+  --border: #363636;
+  --border-strong: #505050;
+  --teal: #91b8ff;
+  --teal-foreground: #111b2d;
+  --tint-teal: #26344c;
+  --success: #70c997;
+  --tint-success: #203429;
+  --warning: #e7b96a;
+  --tint-warning: #382f20;
+  --error: #ed8989;
+  --error-foreground: #2b1216;
+  --tint-error: #3a2525;
+  --info: #8bb9f0;
+  --tint-info: #26364c;
+  --neutral-tint: #2d2d2d;
 }
 
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
-  background: var(--color-paper);
-  color: var(--color-body);
+  background: var(--canvas);
+  color: var(--body);
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 ::selection {
-  background: rgba(13, 148, 136, 0.16);
+  background: color-mix(in srgb, var(--teal) 20%, transparent);
 }
