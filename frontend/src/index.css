@@ -5,6 +5,9 @@
   --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-canvas: var(--canvas);
+  --color-chrome: var(--chrome);
+  --color-chrome-foreground: var(--chrome-foreground);
+  --color-sidebar: var(--sidebar);
   --color-ink: var(--ink);
   --color-body: var(--body);
   --color-muted: var(--muted);
@@ -31,17 +34,20 @@
 :root {
   color-scheme: light;
   --canvas: #f7f7f7;
-  --ink: #1d1d1d;
-  --body: #3f3f3f;
-  --muted: #777777;
-  --faint: #9a9a9a;
+  --chrome: #171717;
+  --chrome-foreground: #f7f7f7;
+  --sidebar: #ededed;
+  --ink: #303030;
+  --body: #424242;
+  --muted: #616161;
+  --faint: #8a8a8a;
   --paper: #ffffff;
-  --wash: #f2f2f2;
-  --border: #e5e5e5;
-  --border-strong: #cfcfcf;
-  --teal: #286de0;
+  --wash: #f6f6f7;
+  --border: #e3e3e3;
+  --border-strong: #c9c9c9;
+  --teal: #005bd3;
   --teal-foreground: #ffffff;
-  --tint-teal: #edf3ff;
+  --tint-teal: #eaf2ff;
   --success: #168354;
   --tint-success: #eaf7f0;
   --warning: #a45e08;
@@ -56,18 +62,21 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --canvas: #1d1d1d;
-  --ink: #f1f1f1;
-  --body: #d2d2d2;
-  --muted: #9a9a9a;
-  --faint: #707070;
+  --canvas: #171717;
+  --chrome: #101010;
+  --chrome-foreground: #f7f7f7;
+  --sidebar: #202020;
+  --ink: #f2f2f2;
+  --body: #d0d0d0;
+  --muted: #a6a6a6;
+  --faint: #858585;
   --paper: #222222;
-  --wash: #202020;
-  --border: #353535;
-  --border-strong: #4b4b4b;
-  --teal: #6f9cff;
-  --teal-foreground: #101b32;
-  --tint-teal: #263248;
+  --wash: #262626;
+  --border: #363636;
+  --border-strong: #505050;
+  --teal: #91b8ff;
+  --teal-foreground: #111b2d;
+  --tint-teal: #26344c;
   --success: #70c997;
   --tint-success: #203429;
   --warning: #e7b96a;
@@ -77,7 +86,7 @@
   --tint-error: #3a2525;
   --info: #8bb9f0;
   --tint-info: #26364c;
-  --neutral-tint: #2b2b2b;
+  --neutral-tint: #2d2d2d;
 }
 
 html,

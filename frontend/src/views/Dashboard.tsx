@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, CheckSquare, Inbox as InboxIcon, Mail, Percent } from 'lucide-react';
+import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
+import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText';
+import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/csr/EnvelopeSimple';
+import { PercentIcon } from '@phosphor-icons/react/dist/csr/Percent';
+import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { api, type EmailItem, type Draft, type Stats } from '../lib/api';
 import { formatRelativeTime, initials, senderName } from '../lib/utils';
 import {
@@ -72,55 +76,38 @@ export function Dashboard({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col items-center gap-5 pt-5 pb-2 text-center sm:pt-10">
-        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
-          <span className="flex size-7 items-center justify-center rounded-full bg-tint-teal text-teal">
-            <Mail className="size-4" strokeWidth={1.8} aria-hidden="true" />
-          </span>
-          Mailroom
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[38px]">
-            What should Mailroom take care of?
+          <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-ink">
+            Good {greeting()}, let&apos;s get started.
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-[15px]">
-            A calm view of incoming mail, drafts, and the decisions that need your attention.
-          </p>
+          <p className="mt-1 text-sm text-muted">Here&apos;s what&apos;s happening in your support inbox.</p>
         </div>
-        <div className="flex w-full max-w-[760px] flex-col gap-2 rounded-[28px] border border-border bg-paper p-2.5 sm:flex-row sm:items-center sm:rounded-full sm:py-2 sm:pr-2 sm:pl-4">
-          <span className="hidden size-9 shrink-0 items-center justify-center rounded-full bg-wash text-muted sm:flex">
-            <InboxIcon className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
-          </span>
-          <p className="min-w-0 flex-1 px-2 text-left text-[13px] text-muted sm:px-0 sm:text-sm">
-            Your inbox is ready for a review.
-          </p>
-          <Button variant="accent" size="md" onClick={onGoInbox} className="w-full rounded-full sm:w-auto">
-            Open inbox
-            <ArrowRight className="size-4" strokeWidth={1.8} aria-hidden="true" />
-          </Button>
-        </div>
+        <Button variant="primary" size="sm" onClick={onGoInbox} className="self-start sm:self-auto">
+          Open inbox
+          <ArrowRightIcon size={16} weight="regular" aria-hidden="true" />
+        </Button>
       </div>
-
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-4">
         <StatCard
-          icon={<Mail className="size-4" strokeWidth={1.8} aria-hidden="true" />}
+          icon={<EnvelopeSimpleIcon size={16} weight="regular" aria-hidden="true" />}
           label="Total emails"
           value={String(stats.total_emails)}
         />
         <StatCard
-          icon={<CheckSquare className="size-4" strokeWidth={1.8} aria-hidden="true" />}
+          icon={<ClipboardTextIcon size={16} weight="regular" aria-hidden="true" />}
           label="Pending drafts"
           value={String(stats.pending_drafts)}
           accent={stats.pending_drafts > 0}
         />
         <StatCard
-          icon={<Percent className="size-4" strokeWidth={1.8} aria-hidden="true" />}
+          icon={<PercentIcon size={16} weight="regular" aria-hidden="true" />}
           label="Approval rate"
           value={`${approvalPct}%`}
           sub={`${stats.approved} approved · ${stats.rejected} rejected`}
         />
         <StatCard
-          icon={<InboxIcon className="size-4" strokeWidth={1.8} aria-hidden="true" />}
+          icon={<TrayIcon size={16} weight="regular" aria-hidden="true" />}
           label="Avg. first response"
           value={
             stats.avg_first_response_min == null
@@ -133,8 +120,7 @@ export function Dashboard({
       {/* Category breakdown */}
       <Card className="p-5 sm:p-6">
         <SectionHeader
-          title="By category"
-          subtitle="How the inbox breaks down across the four categories."
+          title="Email categories"
         />
         <div className="space-y-3">
           {CATEGORY_ORDER.map((cat) => {
@@ -164,11 +150,10 @@ export function Dashboard({
       <div>
         <SectionHeader
           title="Pending approval"
-          subtitle="Drafts waiting for a human decision. Nothing is sent until you approve it."
           action={
             <Button variant="ghost" size="sm" onClick={onGoQueue}>
               View queue
-              <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+              <ArrowRightIcon size={16} weight="regular" aria-hidden="true" />
             </Button>
           }
         />
@@ -216,11 +201,10 @@ export function Dashboard({
       <div>
         <SectionHeader
           title="Recent emails"
-          subtitle="The latest mail Mailroom has seen."
           action={
             <Button variant="ghost" size="sm" onClick={onGoInbox}>
               View all
-              <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+              <ArrowRightIcon size={16} weight="regular" aria-hidden="true" />
             </Button>
           }
         />
@@ -267,6 +251,13 @@ export function Dashboard({
       </div>
     </div>
   );
+}
+
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
 }
 
 function StatCard({

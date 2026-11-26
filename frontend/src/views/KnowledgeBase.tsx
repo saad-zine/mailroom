@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { FileText, RefreshCw, Trash2, Upload } from 'lucide-react';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { FileTextIcon } from '@phosphor-icons/react/dist/csr/FileText';
+import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
+import { UploadSimpleIcon } from '@phosphor-icons/react/dist/csr/UploadSimple';
 import { api, type KbDoc } from '../lib/api';
 import { formatDateTime } from '../lib/utils';
 import {
@@ -118,7 +121,7 @@ export function KnowledgeBase() {
               loading={reindexing}
               disabled={docs.length === 0}
             >
-              <RefreshCw className="h-4 w-4" strokeWidth={1.5} />
+              <ArrowClockwiseIcon className="h-4 w-4" weight="regular" />
               Re-index all
             </Button>
           }
@@ -141,7 +144,7 @@ export function KnowledgeBase() {
           disabled={uploading}
           className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-wash px-6 py-10 text-center transition-colors hover:border-teal hover:bg-tint-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <Upload className="h-5 w-5 text-muted" strokeWidth={1.5} />
+          <UploadSimpleIcon className="h-5 w-5 text-muted" weight="regular" />
           <span className="text-sm font-medium text-ink">
             {uploading ? 'Uploading…' : 'Choose a .txt or .md file to upload'}
           </span>
@@ -170,7 +173,7 @@ export function KnowledgeBase() {
                 size="sm"
                 onClick={() => fileRef.current?.click()}
               >
-                <Upload className="h-4 w-4" strokeWidth={1.5} />
+                <UploadSimpleIcon className="h-4 w-4" weight="regular" />
                 Upload a document
               </Button>
             }
@@ -181,7 +184,7 @@ export function KnowledgeBase() {
           {docs.map((doc) => (
             <div key={doc.id} className="flex items-center gap-4 px-5 py-4">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-tint">
-                <FileText className="h-[18px] w-[18px] text-muted" strokeWidth={1.5} />
+                <FileTextIcon className="h-[18px] w-[18px] text-muted" weight="regular" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-ink">{doc.name}</p>
@@ -197,7 +200,7 @@ export function KnowledgeBase() {
                 disabled={deletingId === doc.id}
                 aria-label={`Delete ${doc.name}`}
               >
-                <Trash2 className="h-4 w-4 text-error" strokeWidth={1.5} />
+                <TrashIcon className="h-4 w-4 text-error" weight="regular" />
                 <span className="text-error">Delete</span>
               </Button>
             </div>

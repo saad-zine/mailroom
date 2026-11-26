@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { Inbox, Loader2 } from 'lucide-react';
+import { SpinnerGapIcon } from '@phosphor-icons/react/dist/csr/SpinnerGap';
+import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { cn } from '../lib/utils';
 import type { Category, DraftStatus } from '../lib/api';
 
@@ -55,7 +56,7 @@ export function Button({
       disabled={disabled || loading}
       {...rest}
     >
-      {loading && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />}
+      {loading && <SpinnerGapIcon size={16} weight="regular" className="animate-spin" aria-hidden="true" />}
       {children}
     </button>
   );
@@ -146,11 +147,10 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-teal">Mailroom workspace</p>
-        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.045em] text-ink">{title}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
+        <h1 className="text-[21px] font-semibold leading-tight tracking-[-0.02em] text-ink">{title}</h1>
+        <p className="mt-1 text-sm leading-relaxed text-muted">{description}</p>
       </div>
       {action}
     </div>
@@ -208,7 +208,7 @@ export function FilterChip({
 /* ---------- Loading / empty / error ---------- */
 
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn('h-5 w-5 animate-spin text-muted', className)} strokeWidth={1.5} />;
+  return <SpinnerGapIcon size={20} weight="regular" className={cn('animate-spin text-muted', className)} aria-hidden="true" />;
 }
 
 export function LoadingState({ label = 'Loading…' }: { label?: string }) {
@@ -232,7 +232,7 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
       <span className="mb-4 flex size-11 items-center justify-center rounded-xl border border-border bg-wash text-muted">
-        <Inbox className="size-5" strokeWidth={1.8} aria-hidden="true" />
+        <TrayIcon size={20} weight="regular" aria-hidden="true" />
       </span>
       <p className="text-sm font-semibold text-ink">{title}</p>
       {subtitle && <p className="mt-1.5 max-w-sm text-[13px] leading-relaxed text-muted">{subtitle}</p>}
