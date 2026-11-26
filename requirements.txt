@@ -9,22 +9,23 @@ pydantic>=2.6
 python-multipart>=0.0.9
 python-dotenv>=1.0
 langchain-core>=0.3
-langchain_community>=0.3
 langgraph>=0.3
 langgraph-checkpoint-sqlite>=2.0
 langchain-groq>=0.2
-google-api-python-client>=2.0
-google-auth-oauthlib>=1.2
-google-auth-httplib2>=0.2
 beautifulsoup4>=4.12
 httpx>=0.27
 # Postgres (Supabase) driver — binary wheels, no compiler needed on
 # Vercel. Only used when DATABASE_URL is set; SQLite is the fallback.
 psycopg[binary]>=3.2
 # NOT installed on Vercel (kept in backend/requirements.txt for local
-# dev only): langchain_chroma, chromadb, langchain_google_genai and
-# pytest. Vector RAG (Chroma + Gemini embeddings) is only built when
-# GOOGLE_API_KEY is set, and both imports are lazy inside that branch,
-# so the app runs on the keyword retriever without them. Together they
-# push the serverless bundle past Vercel's 500 MB function limit.
-# pytest is test-only and never needed at runtime.
+# dev only): langchain_chroma, chromadb, langchain_google_genai,
+# langchain_community, google-api-python-client, google-auth-oauthlib,
+# google-auth-httplib2 and pytest. Vector RAG (Chroma + Gemini
+# embeddings) is only built when GOOGLE_API_KEY is set, and both
+# imports are lazy inside that branch, so the app runs on the keyword
+# retriever without them. Gmail's google imports are lazy inside
+# _get_gmail_service(), which is only called when a token or
+# credentials file exists, so the app runs without Gmail connected.
+# langchain_community is never imported by the app. pytest is
+# test-only. Together these push the serverless bundle past Vercel's
+# 500 MB function limit (was 1144 MB, then 607 MB after the first trim).
