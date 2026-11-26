@@ -16,6 +16,7 @@ import {
   Card,
   ErrorState,
   LoadingState,
+  PageHeader,
   SectionHeader,
 } from '../components/ui';
 
@@ -99,12 +100,10 @@ export function Settings() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-[20px] font-semibold text-ink">Settings</h1>
-        <p className="mt-0.5 text-[13px] text-muted">
-          How Mailroom runs, what it runs on, and whether it can reach your inbox.
-        </p>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="How Mailroom runs, what it runs on, and whether it can reach your inbox."
+      />
 
       {/* Setup needed — live mode without its API key */}
       {settings.setup_hint && (
@@ -186,7 +185,7 @@ export function Settings() {
           title="Connection"
           subtitle="What Mailroom is connected to right now."
         />
-        <dl className="divide-y divide-[#f3f4f6]">
+        <dl className="divide-y divide-border">
           <Row label="Mode" value={settings.mode} badge={settings.mode === 'mock' ? 'warning' : 'success'} />
           <Row label="Provider" value={settings.provider} />
           <Row label="Model" value={settings.model} mono />

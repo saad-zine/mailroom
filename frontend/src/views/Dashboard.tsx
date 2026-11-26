@@ -72,38 +72,46 @@ export function Dashboard({
 
   return (
     <div className="space-y-8">
-      {/* Greeting */}
-      <div>
-        <h1 className="text-[28px] font-semibold leading-tight text-ink">
-          Good {greeting()}, here&apos;s your inbox.
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          Mailroom has drafted replies for your support mail — review them before anything
-          goes out.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-teal">Workspace overview</p>
+          <h1 className="text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[34px]">
+            Good {greeting()}, here&apos;s your inbox.
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+            A clear view of your team&apos;s incoming mail, draft replies, and approval workload.
+          </p>
+        </div>
+        <div className="hidden shrink-0 items-center gap-2 rounded-full border border-border bg-paper px-3.5 py-2 text-xs font-medium text-muted shadow-sm sm:flex">
+          <span className="size-2 rounded-full bg-teal" aria-hidden="true" />
+          Human review enabled
+        </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
-          icon={<Mail className="h-[18px] w-[18px] text-muted" strokeWidth={1.5} />}
+          icon={<Mail className="size-5" strokeWidth={1.8} />}
+          tone="info"
           label="Total emails"
           value={String(stats.total_emails)}
         />
         <StatCard
-          icon={<CheckSquare className="h-[18px] w-[18px] text-muted" strokeWidth={1.5} />}
+          icon={<CheckSquare className="size-5" strokeWidth={1.8} />}
+          tone="warning"
           label="Pending drafts"
           value={String(stats.pending_drafts)}
           accent={stats.pending_drafts > 0}
         />
         <StatCard
-          icon={<Percent className="h-[18px] w-[18px] text-muted" strokeWidth={1.5} />}
+          icon={<Percent className="size-5" strokeWidth={1.8} />}
+          tone="success"
           label="Approval rate"
           value={`${approvalPct}%`}
           sub={`${stats.approved} approved · ${stats.rejected} rejected`}
         />
         <StatCard
-          icon={<InboxIcon className="h-[18px] w-[18px] text-muted" strokeWidth={1.5} />}
+          icon={<InboxIcon className="size-5" strokeWidth={1.8} />}
+          tone="teal"
           label="Avg. first response"
           value={
             stats.avg_first_response_min == null
@@ -114,7 +122,7 @@ export function Dashboard({
       </div>
 
       {/* Category breakdown */}
-      <Card className="p-5">
+      <Card className="p-5 sm:p-6">
         <SectionHeader
           title="By category"
           subtitle="How the inbox breaks down across the four categories."
@@ -128,7 +136,7 @@ export function Dashboard({
                 <span className="w-36 shrink-0 text-[13px] text-body">
                   {CATEGORY_LABELS[cat]}
                 </span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-tint">
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-neutral-tint">
                   <div
                     className="h-full rounded-full bg-teal transition-all duration-300"
                     style={{ width: `${pct}%` }}
@@ -168,7 +176,7 @@ export function Dashboard({
             />
           </Card>
         ) : (
-          <Card className="divide-y divide-[#f3f4f6]">
+          <Card className="divide-y divide-border">
             {pending.map((d) => (
               <button
                 key={d.id}
@@ -215,7 +223,7 @@ export function Dashboard({
             />
           </Card>
         ) : (
-          <Card className="divide-y divide-[#f3f4f6]">
+          <Card className="divide-y divide-border">
             {recent.map((e) => (
               <button
                 key={e.id}
@@ -261,31 +269,38 @@ function greeting(): string {
 
 function StatCard({
   icon,
+  tone,
   label,
   value,
   sub,
   accent,
 }: {
   icon: React.ReactNode;
+  tone: 'info' | 'warning' | 'success' | 'teal';
   label: string;
   value: string;
   sub?: string;
   accent?: boolean;
 }) {
+  const toneStyles = {
+    info: 'bg-tint-info text-info',
+    warning: 'bg-tint-warning text-warning',
+    success: 'bg-tint-success text-success',
+    teal: 'bg-tint-teal text-teal',
+  };
+
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] text-muted">{label}</span>
-        {icon}
+    <Card className="p-4 transition-shadow hover:shadow-md sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <p className="pt-1 text-[12px] font-semibold tracking-[0.01em] text-muted">{label}</p>
+        <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${toneStyles[tone]}`}>
+          {icon}
+        </span>
       </div>
-      <p className="mt-2 text-[28px] font-semibold leading-none text-ink">{value}</p>
-      {sub ? (
-        <p className="mt-2 text-xs text-muted">{sub}</p>
-      ) : accent ? (
-        <p className="mt-2 text-xs font-medium text-warning">Needs your review</p>
-      ) : (
-        <p className="mt-2 text-xs text-faint">&nbsp;</p>
-      )}
+      <p className="mt-4 text-[32px] font-semibold leading-none tracking-[-0.05em] text-ink tabular-nums">{value}</p>
+      <div className="mt-2 min-h-5 text-xs text-muted">
+        {sub ?? (accent ? <span className="font-semibold text-warning">Needs your review</span> : null)}
+      </div>
     </Card>
   );
 }

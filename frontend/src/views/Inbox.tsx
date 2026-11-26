@@ -10,6 +10,7 @@ import {
   ErrorState,
   FilterChip,
   LoadingState,
+  PageHeader,
 } from '../components/ui';
 
 const CATEGORY_FILTERS: Array<{ id: Category | 'all'; label: string }> = [
@@ -56,12 +57,10 @@ export function Inbox({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-[20px] font-semibold text-ink">Inbox</h1>
-        <p className="mt-0.5 text-[13px] text-muted">
-          Every email Mailroom has categorized. Open one to review its draft.
-        </p>
-      </div>
+      <PageHeader
+        title="Inbox"
+        description="Every email Mailroom has categorized. Open one to review its draft."
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
@@ -120,7 +119,7 @@ export function Inbox({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
           />
         </Card>
       ) : (
-        <Card className="divide-y divide-[#f3f4f6]">
+        <Card className="divide-y divide-border">
           {visible.map((e) => (
             <button
               key={e.id}

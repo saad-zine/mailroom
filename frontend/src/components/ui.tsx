@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Inbox, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { Category, DraftStatus } from '../lib/api';
 
@@ -10,15 +10,15 @@ type ButtonSize = 'sm' | 'md' | 'lg';
 
 const buttonVariants: Record<ButtonVariant, string> = {
   primary:
-    'bg-ink text-white border border-ink hover:bg-black focus-visible:ring-ink/20',
+    'bg-ink text-paper border border-ink hover:opacity-90 focus-visible:ring-ink/20',
   secondary:
     'bg-paper text-ink border border-border hover:border-border-strong hover:bg-wash focus-visible:ring-teal/20',
   ghost:
     'bg-transparent text-muted border border-transparent hover:bg-wash hover:text-ink focus-visible:ring-teal/20',
   destructive:
-    'bg-error text-white border border-error hover:bg-[#b91c1c] focus-visible:ring-error/20',
+    'bg-error text-error-foreground border border-error hover:brightness-95 focus-visible:ring-error/20',
   accent:
-    'bg-teal text-white border border-teal hover:bg-[#0b7d73] focus-visible:ring-teal/20',
+    'bg-teal text-teal-foreground border border-teal hover:brightness-95 focus-visible:ring-teal/20',
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -71,7 +71,7 @@ const badgeTones: Record<BadgeTone, string> = {
   warning: 'bg-tint-warning text-warning',
   error: 'bg-tint-error text-error',
   info: 'bg-tint-info text-info',
-  neutral: 'bg-neutral-tint text-[#4b5563]',
+  neutral: 'bg-neutral-tint text-body',
 };
 
 export function Badge({
@@ -86,7 +86,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1.5 rounded-full border border-current/10 px-2.5 py-1 text-[11px] font-semibold leading-none whitespace-nowrap',
         badgeTones[tone],
         className,
       )}
@@ -130,8 +130,29 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={cn('rounded-lg border border-border bg-paper', className)}>
+    <div className={cn('rounded-2xl border border-border bg-paper shadow-sm transition-shadow duration-200', className)}>
       {children}
+    </div>
+  );
+}
+
+export function PageHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-teal">Mailroom workspace</p>
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.045em] text-ink">{title}</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
+      </div>
+      {action}
     </div>
   );
 }
@@ -175,7 +196,7 @@ export function FilterChip({
         'cursor-pointer rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30',
         active
-          ? 'border-ink bg-ink text-white'
+          ? 'border-teal bg-tint-teal text-teal'
           : 'border-border bg-paper text-body hover:border-border-strong hover:bg-wash',
       )}
     >
@@ -209,9 +230,12 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      <p className="text-sm font-medium text-ink">{title}</p>
-      {subtitle && <p className="mt-1 max-w-sm text-[13px] text-muted">{subtitle}</p>}
+    <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+      <span className="mb-4 flex size-11 items-center justify-center rounded-xl border border-border bg-wash text-muted">
+        <Inbox className="size-5" strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      {subtitle && <p className="mt-1.5 max-w-sm text-[13px] leading-relaxed text-muted">{subtitle}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );

@@ -173,7 +173,7 @@ export function EmailDetail({
               </p>
             </div>
           </div>
-          <div className="mt-5 border-t border-[#f3f4f6] pt-5">
+          <div className="mt-5 border-t border-border pt-5">
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">
               {email.body || email.snippet}
             </p>
@@ -238,7 +238,7 @@ export function EmailDetail({
             <>
               {/* Proofreader feedback */}
               {draft.proofreader_feedback && (
-                <div className="mt-4 flex gap-3 rounded-lg border border-[#fde68a]/60 bg-tint-warning px-4 py-3">
+                <div className="mt-4 flex gap-3 rounded-xl border border-warning/25 bg-tint-warning px-4 py-3">
                   <MessageSquareQuote
                     className="mt-0.5 h-[18px] w-[18px] shrink-0 text-warning"
                     strokeWidth={1.5}

@@ -9,6 +9,7 @@ import {
   ErrorState,
   FilterChip,
   LoadingState,
+  PageHeader,
 } from '../components/ui';
 
 const STATUS_FILTERS: Array<{ id: DraftStatus | 'all'; label: string }> = [
@@ -47,13 +48,10 @@ export function Queue({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-[20px] font-semibold text-ink">Approval queue</h1>
-        <p className="mt-0.5 text-[13px] text-muted">
-          Every draft Mailroom wrote, waiting for a human decision. Nothing is sent
-          without your approval.
-        </p>
-      </div>
+      <PageHeader
+        title="Approval queue"
+        description="Every draft Mailroom wrote, waiting for a human decision. Nothing is sent without your approval."
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         {STATUS_FILTERS.map((f) => (
@@ -87,7 +85,7 @@ export function Queue({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
           />
         </Card>
       ) : (
-        <Card className="divide-y divide-[#f3f4f6]">
+        <Card className="divide-y divide-border">
           {drafts.map((d) => (
             <button
               key={d.id}

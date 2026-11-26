@@ -1,49 +1,110 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-@theme {
+@theme inline {
   --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-paper: var(--paper);
+  --color-wash: var(--wash);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-teal: var(--teal);
+  --color-teal-foreground: var(--teal-foreground);
+  --color-tint-teal: var(--tint-teal);
+  --color-success: var(--success);
+  --color-tint-success: var(--tint-success);
+  --color-warning: var(--warning);
+  --color-tint-warning: var(--tint-warning);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-tint-error: var(--tint-error);
+  --color-info: var(--info);
+  --color-tint-info: var(--tint-info);
+  --color-neutral-tint: var(--neutral-tint);
+}
 
-  /* Mailroom palette — Clean design system (Attio/folk style) */
-  --color-ink: #111111;
-  --color-body: #333333;
-  --color-muted: #6b7280;
-  --color-faint: #9ca3af;
-  --color-paper: #ffffff;
-  --color-wash: #fafafa;
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-  --color-teal: #0d9488;
-  --color-tint-teal: #f0fdf9;
-  --color-success: #16a34a;
-  --color-tint-success: #f0fdf4;
-  --color-warning: #d97706;
-  --color-tint-warning: #fffbeb;
-  --color-error: #dc2626;
-  --color-tint-error: #fef2f2;
-  --color-info: #2563eb;
-  --color-tint-info: #eff6ff;
-  --color-neutral-tint: #f3f4f6;
+:root {
+  color-scheme: light;
+  --canvas: #f5f7fa;
+  --ink: #182333;
+  --body: #465366;
+  --muted: #728096;
+  --faint: #94a0b1;
+  --paper: #ffffff;
+  --wash: #f8fafc;
+  --border: #e4e9f0;
+  --border-strong: #cbd4df;
+  --teal: #147c73;
+  --teal-foreground: #ffffff;
+  --tint-teal: #e9f6f4;
+  --success: #168354;
+  --tint-success: #eaf7f0;
+  --warning: #a45e08;
+  --tint-warning: #fff5e5;
+  --error: #bd3f42;
+  --error-foreground: #ffffff;
+  --tint-error: #fff0f0;
+  --info: #356db2;
+  --tint-info: #edf4fc;
+  --neutral-tint: #eef1f5;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: #0d131b;
+  --ink: #f1f4f8;
+  --body: #c4ceda;
+  --muted: #98a7b9;
+  --faint: #77879b;
+  --paper: #141c27;
+  --wash: #101720;
+  --border: #273444;
+  --border-strong: #3a4a5d;
+  --teal: #42b7a9;
+  --teal-foreground: #09211f;
+  --tint-teal: #183b39;
+  --success: #6acb98;
+  --tint-success: #173326;
+  --warning: #f0bd6d;
+  --tint-warning: #392d1b;
+  --error: #f28b8f;
+  --error-foreground: #2b1216;
+  --tint-error: #3a2228;
+  --info: #8bb9f0;
+  --tint-info: #1c3049;
+  --neutral-tint: #202b38;
 }
 
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
-  background: var(--color-paper);
-  color: var(--color-body);
+  background: var(--canvas);
+  color: var(--body);
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 ::selection {
-  background: rgba(13, 148, 136, 0.16);
+  background: color-mix(in srgb, var(--teal) 20%, transparent);
 }

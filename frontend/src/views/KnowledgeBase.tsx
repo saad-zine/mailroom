@@ -8,6 +8,7 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  PageHeader,
   SectionHeader,
 } from '../components/ui';
 
@@ -89,13 +90,10 @@ export function KnowledgeBase() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-[20px] font-semibold text-ink">Knowledge base</h1>
-        <p className="mt-0.5 text-[13px] text-muted">
-          The docs Mailroom answers from. Upload product guides, FAQs, and policies —
-          drafts cite them when replying.
-        </p>
-      </div>
+      <PageHeader
+        title="Knowledge base"
+        description="The docs Mailroom answers from. Upload product guides, FAQs, and policies — drafts cite them when replying."
+      />
 
       {notice && (
         <p className="rounded-lg bg-tint-success px-4 py-2.5 text-[13px] text-success">
@@ -179,7 +177,7 @@ export function KnowledgeBase() {
           />
         </Card>
       ) : (
-        <Card className="divide-y divide-[#f3f4f6]">
+        <Card className="divide-y divide-border">
           {docs.map((doc) => (
             <div key={doc.id} className="flex items-center gap-4 px-5 py-4">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-tint">

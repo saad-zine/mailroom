@@ -1,4 +1,15 @@
-import { FlaskConical, Home, MailWarning } from 'lucide-react';
+import {
+  BookOpen,
+  CheckSquare,
+  FlaskConical,
+  Home,
+  Inbox,
+  Mail,
+  Moon,
+  Settings,
+  Sun,
+  TriangleAlert,
+} from 'lucide-react';
 import type { Health } from '../lib/api';
 import type { View } from '../App';
 import { Badge } from './ui';
@@ -9,46 +20,70 @@ const VIEW_TITLES: Record<View, string> = {
   queue: 'Approval queue',
   kb: 'Knowledge base',
   settings: 'Settings',
-  detail: 'Email',
+  detail: 'Email review',
+};
+
+const VIEW_ICONS: Record<View, typeof Home> = {
+  dashboard: Home,
+  inbox: Inbox,
+  queue: CheckSquare,
+  kb: BookOpen,
+  settings: Settings,
+  detail: Mail,
 };
 
 export function TopBar({
   view,
   health,
   apiReachable,
+  theme,
+  onToggleTheme,
 }: {
   view: View;
   health: Health | null;
   apiReachable: boolean;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }) {
+  const PageIcon = VIEW_ICONS[view];
+
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-paper px-6">
-      <div className="flex items-center gap-2 text-sm">
-        <Home className="h-4 w-4 text-muted" strokeWidth={1.5} />
-        <span className="text-muted">/</span>
-        <span className="font-medium text-ink">{VIEW_TITLES[view]}</span>
+    <header className="sticky top-0 z-20 flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-paper/90 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+      <div className="flex min-w-0 items-center gap-3" aria-label="Breadcrumb">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-wash text-muted lg:hidden">
+          <Mail className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
+        </span>
+        <span className="hidden items-center gap-2 text-xs font-medium text-muted lg:flex">
+          Workspace <span className="text-faint">/</span>
+        </span>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-tint-teal text-teal">
+          <PageIcon className="size-[17px]" strokeWidth={1.8} aria-hidden="true" />
+        </span>
+        <span className="truncate text-sm font-semibold tracking-[-0.02em] text-ink">{VIEW_TITLES[view]}</span>
       </div>
-      <div className="flex items-center gap-2">
+
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {!apiReachable ? (
-          <Badge tone="error">
-            <MailWarning className="h-3.5 w-3.5" strokeWidth={1.5} />
-            API unreachable
-          </Badge>
+          <Badge tone="error"><span className="size-1.5 rounded-full bg-error" aria-hidden="true" /><span className="sr-only sm:not-sr-only">API unreachable</span></Badge>
         ) : health ? (
           health.mode === 'mock' ? (
-            <Badge tone="warning">
-              <FlaskConical className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Demo mode
-            </Badge>
+            <Badge tone="warning"><FlaskConical className="size-3.5" strokeWidth={1.8} aria-hidden="true" /><span className="sr-only sm:not-sr-only">Demo mode</span></Badge>
           ) : health.llm_available === false ? (
-            <Badge tone="warning">
-              <FlaskConical className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Setup needed
-            </Badge>
+            <Badge tone="warning"><span className="size-1.5 rounded-full bg-warning" aria-hidden="true" /><span className="sr-only sm:not-sr-only">Setup needed</span></Badge>
           ) : (
-            <Badge tone="success">Live · {health.provider}</Badge>
+            <Badge tone="success"><span className="size-1.5 rounded-full bg-success" aria-hidden="true" /><span className="sr-only sm:not-sr-only">Live · {health.provider}</span></Badge>
           )
         ) : null}
+        <span className="mx-0.5 hidden h-6 w-px bg-border sm:block" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          className="flex size-9 cursor-pointer items-center justify-center rounded-xl border border-border bg-paper text-muted transition-colors hover:bg-wash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/40"
+        >
+          {theme === 'dark' ? <Sun className="size-[17px]" strokeWidth={1.8} aria-hidden="true" /> : <Moon className="size-[17px]" strokeWidth={1.8} aria-hidden="true" />}
+        </button>
       </div>
     </header>
   );
@@ -57,9 +92,10 @@ export function TopBar({
 export function SetupBanner({ health }: { health: Health | null }) {
   if (!health || health.mode !== 'live' || !health.setup_hint) return null;
   return (
-    <div className="border-b border-border bg-tint-warning px-6 py-2.5">
-      <p className="text-[13px] text-warning">
-        <span className="font-medium">Setup needed</span> — {health.setup_hint}
+    <div role="status" className="flex items-start gap-3 border-b border-warning/20 bg-tint-warning px-4 py-3 text-warning sm:px-6 lg:px-8">
+      <TriangleAlert className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+      <p className="text-xs leading-relaxed sm:text-[13px]">
+        <span className="font-semibold">Setup needed</span><span className="mx-1.5 opacity-60">·</span>{health.setup_hint}
       </p>
     </div>
   );
@@ -68,10 +104,10 @@ export function SetupBanner({ health }: { health: Health | null }) {
 export function DemoBanner({ health }: { health: Health | null }) {
   if (!health || health.mode !== 'mock') return null;
   return (
-    <div className="border-b border-border bg-tint-warning px-6 py-2.5">
-      <p className="text-[13px] text-warning">
-        <span className="font-medium">Demo data</span> — no real Gmail connected.
-        Connect Gmail in Settings to process your real inbox.
+    <div role="status" className="flex items-start gap-3 border-b border-warning/20 bg-tint-warning px-4 py-3 text-warning sm:px-6 lg:px-8">
+      <FlaskConical className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+      <p className="text-xs leading-relaxed sm:text-[13px]">
+        <span className="font-semibold">Demo data</span><span className="mx-1.5 opacity-60">·</span>No real Gmail connected. Connect Gmail in Settings to process your real inbox.
       </p>
     </div>
   );
