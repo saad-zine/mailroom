@@ -11,6 +11,7 @@ import { EmailDetail } from './views/EmailDetail';
 import { KnowledgeBase } from './views/KnowledgeBase';
 import { Settings } from './views/Settings';
 import { Auth } from './components/Auth';
+import { isDemoSignedIn, signOutDemo } from './lib/demoAuth';
 import { authEnabled, storeToken, supabase } from './lib/supabase';
 
 export type View = 'dashboard' | 'inbox' | 'queue' | 'kb' | 'settings' | 'detail';
@@ -23,8 +24,8 @@ export default function App() {
   const [pendingCount, setPendingCount] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [signedIn, setSignedIn] = useState(!authEnabled);
-  const [authChecked, setAuthChecked] = useState(!authEnabled);
+  const [signedIn, setSignedIn] = useState(isDemoSignedIn);
+  const [authChecked, setAuthChecked] = useState(() => !supabase || isDemoSignedIn());
 
   const refreshPending = useCallback(() => {
     api
@@ -95,13 +96,14 @@ export default function App() {
   };
 
   const signOut = async () => {
+    signOutDemo();
     if (supabase) await supabase.auth.signOut();
     storeToken(null);
     window.location.assign('/');
   };
 
   if (!authChecked) return <div className="h-full bg-canvas" />;
-  if (authEnabled && !signedIn) return <Auth onSignedIn={() => setSignedIn(true)} />;
+  if (!signedIn) return <Auth onSignedIn={() => setSignedIn(true)} />;
 
   return (
     <div className="flex h-full flex-col bg-canvas">

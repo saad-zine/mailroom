@@ -1,31 +1,32 @@
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useEffect, useId, useRef, type CSSProperties } from 'react';
 
 /**
- * GrokBot — the x.ai bot mark: one round head with two slanted,
- * asymmetric eyes cut out of it. The geometry is the published mark
- * (viewBox 0 0 100 100, head 4…96). The eyes are separate paths so they
- * can blink, squint, and follow the cursor independently.
+ * GrokBot — the x.ai bot head: one round shell with two slanted eyes cut
+ * out of it. The head is the published mark; the eyes are the real poses
+ * from the animated x.ai/bot hero, so they read correctly at small sizes.
+ * The eyes can still blink, wander, and look at the cursor.
  */
 
 const HEAD =
   'M96 50L95.98 51.51L95.9 53.01L95.78 54.51L95.61 56L95.39 57.49L95.12 58.97L94.8 60.45L94.43 61.91L94.02 63.35L93.56 64.79L93.05 66.2L92.5 67.6L91.9 68.98L91.26 70.35L90.57 71.68L89.84 73L89.06 74.29L88.25 75.56L87.39 76.79L86.49 78L85.56 79.18L84.58 80.33L83.57 81.45L82.53 82.53L81.45 83.57L80.33 84.58L79.18 85.56L78 86.49L76.79 87.39L75.56 88.25L74.29 89.06L73 89.84L71.68 90.57L70.35 91.26L68.98 91.9L67.6 92.5L66.2 93.05L64.79 93.56L63.35 94.02L61.91 94.43L60.45 94.8L58.97 95.12L57.49 95.39L56 95.61L54.51 95.78L53.01 95.9L51.51 95.98L50 96L48.49 95.98L46.99 95.9L45.49 95.78L44 95.61L42.51 95.39L41.03 95.12L39.55 94.8L38.09 94.43L36.65 94.02L35.21 93.56L33.8 93.05L32.4 92.5L31.02 91.9L29.65 91.26L28.32 90.57L27 89.84L25.71 89.06L24.44 88.25L23.21 87.39L22 86.49L20.82 85.56L19.67 84.58L18.55 83.57L17.47 82.53L16.43 81.45L15.42 80.33L14.44 79.18L13.51 78L12.61 76.79L11.75 75.56L10.94 74.29L10.16 73L9.43 71.68L8.74 70.35L8.1 68.98L7.5 67.6L6.95 66.2L6.44 64.79L5.98 63.35L5.57 61.91L5.2 60.45L4.88 58.97L4.61 57.49L4.39 56L4.22 54.51L4.1 53.01L4.02 51.51L4 50L4.02 48.49L4.1 46.99L4.22 45.49L4.39 44L4.61 42.51L4.88 41.03L5.2 39.55L5.57 38.09L5.98 36.65L6.44 35.21L6.95 33.8L7.5 32.4L8.1 31.02L8.74 29.65L9.43 28.32L10.16 27L10.94 25.71L11.75 24.44L12.61 23.21L13.51 22L14.44 20.82L15.42 19.67L16.43 18.55L17.47 17.47L18.55 16.43L19.67 15.42L20.82 14.44L22 13.51L23.21 12.61L24.44 11.75L25.71 10.94L27 10.16L28.32 9.43L29.65 8.74L31.02 8.1L32.4 7.5L33.8 6.95L35.21 6.44L36.65 5.98L38.09 5.57L39.55 5.2L41.03 4.88L42.51 4.61L44 4.39L45.49 4.22L46.99 4.1L48.49 4.02L50 4L51.51 4.02L53.01 4.1L54.51 4.22L56 4.39L57.49 4.61L58.97 4.88L60.45 5.2L61.91 5.57L63.35 5.98L64.79 6.44L66.2 6.95L67.6 7.5L68.98 8.1L70.35 8.74L71.68 9.43L73 10.16L74.29 10.94L75.56 11.75L76.79 12.61L78 13.51L79.18 14.44L80.33 15.42L81.45 16.43L82.53 17.47L83.57 18.55L84.58 19.67L85.56 20.82L86.49 22L87.39 23.21L88.25 24.44L89.06 25.71L89.84 27L90.57 28.32L91.26 29.65L91.9 31.02L92.5 32.4L93.05 33.8L93.56 35.21L94.02 36.65L94.43 38.09L94.8 39.55L95.12 41.03L95.39 42.51L95.61 44L95.78 45.49L95.9 46.99L95.98 48.49Z';
 
+// The two eye poses, in the 92×92 coordinate space of x.ai's animated bot.
 const EYE_LEFT =
-  'M63.57 43.59L63.79 43.18L63.94 42.85L64.06 42.52L64.2 42.01L64.28 41.6L64.33 41.13L64.34 40.77L64.33 40.28L64.3 40L64.24 39.65L64.17 39.29L64.07 38.95L63.95 38.62L63.82 38.3L63.67 37.99L63.51 37.69L62.97 36.82L62.61 36.24L61.87 35.09L61.51 34.51L60.76 33.38L60.39 32.82L59.64 31.71L58.88 30.61L58.5 30.06L57.73 28.99L56.96 27.93L56.57 27.41L55.8 26.38L55.6 26.13L55.4 25.88L55.17 25.65L54.93 25.42L54.67 25.2L54.4 25L54.1 24.81L53.79 24.63L53.54 24.5L53.09 24.31L52.75 24.18L52.4 24.08L51.86 23.96L51.44 23.9L50.96 23.86L50.59 23.86L50.1 23.89L49.81 23.92L49.45 23.98L49.1 24.05L48.76 24.15L48.44 24.26L48.12 24.38L47.82 24.52L47.53 24.68L47.25 24.85L46.98 25.03L46.72 25.23L46.47 25.45L46.24 25.67L46.01 25.92L45.8 26.18L45.53 26.59L45.43 26.77L45.26 27.1L45.12 27.44L44.97 27.91L44.9 28.24L44.86 28.44L44.83 28.82L44.82 29.2L44.84 29.56L44.89 29.89L44.95 30.22L45.1 30.71L45.28 31.13L45.42 31.41L45.58 31.69L45.76 31.95L46.33 32.73L46.71 33.25L47.47 34.3L47.85 34.84L48.61 35.91L48.99 36.46L49.75 37.56L50.5 38.67L50.88 39.23L51.63 40.36L52 40.93L52.74 42.07L53.11 42.65L53.66 43.52L53.86 43.8L54.07 44.07L54.3 44.33L54.66 44.69L55.1 45.06L55.4 45.27L55.71 45.47L56.07 45.66L56.46 45.84L56.86 45.99L57.08 46.06L57.43 46.15L57.8 46.22L58.38 46.29L58.78 46.3L59 46.3L59.52 46.25L59.87 46.19L60.21 46.12L60.54 46.02L60.85 45.91L61.16 45.78L61.45 45.63L61.74 45.46L62.01 45.28L62.28 45.08L62.53 44.87L62.77 44.64L63 44.39L63.22 44.11L63.42 43.83Z';
+  'M34.12 49.73L34.48 49.48L34.72 49.25L34.82 49.14L35.08 48.82L35.16 48.7L35.34 48.4L35.53 47.97L35.66 47.55L35.74 47.13L35.78 46.72L35.78 46.3L35.74 45.05L35.72 43.8L35.72 42.56L35.73 41.74L35.78 40.5L35.82 39.69L35.91 38.47L35.98 37.67L35.99 37.28L35.97 36.88L35.9 36.49L35.77 36.05L35.61 35.72L35.46 35.46L35.37 35.33L35.14 35.07L35.02 34.96L34.81 34.78L34.5 34.59L34.12 34.43L33.77 34.34L33.41 34.29L33.05 34.29L32.69 34.33L32.32 34.42L31.94 34.56L31.58 34.74L31.18 35L30.98 35.16L30.78 35.34L30.55 35.57L30.37 35.79L30.22 35.98L29.97 36.39L29.77 36.79L29.63 37.2L29.52 37.6L29.46 38L29.35 39.2L29.26 40.42L29.2 41.65L29.18 42.47L29.17 43.71L29.18 44.54L29.22 45.79L29.27 46.62L29.31 47.04L29.39 47.45L29.52 47.86L29.69 48.26L29.93 48.66L30.08 48.87L30.23 49.06L30.47 49.31L30.63 49.46L30.85 49.62L31.21 49.84L31.6 50.01L31.96 50.11L32.33 50.17L32.69 50.18L33.06 50.14L33.41 50.05L33.77 49.92L34.12 49.73Z';
 
 const EYE_RIGHT =
-  'M80.9 35.57L81.17 35.64L81.44 35.68L81.68 35.7L81.93 35.71L82.16 35.69L82.38 35.66L82.59 35.61L82.8 35.54L82.99 35.46L83.18 35.35L83.36 35.23L83.52 35.1L83.68 34.94L83.83 34.76L84.02 34.47L84.09 34.33L84.2 34.07L84.33 33.67L84.39 33.4L84.43 33.12L84.44 32.94L84.46 32.59L84.45 32.24L84.41 31.89L84.37 31.56L84.3 31.24L84.17 30.72L84.02 30.27L83.9 29.96L83.77 29.64L83.63 29.34L83.16 28.43L82.84 27.83L82.18 26.65L81.84 26.06L81.14 24.91L80.78 24.34L80.04 23.22L79.27 22.13L78.88 21.59L78.08 20.53L77.67 20.01L76.83 18.99L76.4 18.49L75.75 17.76L75.53 17.52L75.29 17.28L75.03 17.05L74.65 16.72L74.2 16.37L73.9 16.16L73.59 15.96L73.24 15.75L72.87 15.55L72.5 15.37L72.3 15.27L71.97 15.14L71.49 14.96L71.14 14.86L70.79 14.77L70.6 14.73L70.16 14.66L69.88 14.63L69.6 14.62L69.35 14.63L69.1 14.65L68.87 14.68L68.65 14.73L68.44 14.79L68.24 14.87L68.06 14.96L67.89 15.06L67.73 15.18L67.59 15.32L67.46 15.47L67.35 15.63L67.27 15.77L67.17 16.03L67.12 16.23L67.08 16.52L67.07 16.78L67.1 17.14L67.15 17.39L67.21 17.64L67.33 17.99L67.42 18.2L67.54 18.47L67.68 18.74L67.84 19L68 19.26L68.18 19.51L68.38 19.76L68.58 20.01L68.8 20.25L69.65 21.25L70.06 21.76L70.88 22.79L71.68 23.85L72.07 24.39L72.83 25.49L73.58 26.6L73.94 27.17L74.64 28.32L74.99 28.91L75.66 30.09L75.98 30.69L76.46 31.59L76.62 31.89L76.8 32.19L76.99 32.48L77.2 32.77L77.41 33.05L77.64 33.33L77.89 33.6L78.08 33.8L78.42 34.13L78.69 34.36L79.04 34.64L79.36 34.86L79.77 35.11L80.05 35.25L80.32 35.37L80.69 35.51Z';
+  'M47.35 49.5L47.75 49.76L48.15 49.95L48.55 50.08L48.96 50.17L49.36 50.2L49.77 50.19L50.18 50.14L50.59 50.03L51.02 49.87L51.43 49.65L51.67 49.48L51.85 49.33L52.12 49.09L52.29 48.9L52.45 48.69L52.71 48.29L52.9 47.88L53.04 47.48L53.13 47.06L53.17 46.65L53.21 45.82L53.27 44.57L53.3 43.74L53.34 42.5L53.36 41.68L53.38 40.45L53.39 39.23L53.38 38.02L53.36 37.62L53.29 37.22L53.17 36.82L52.99 36.42L52.75 36.01L52.61 35.81L52.43 35.6L52.2 35.36L52 35.19L51.79 35.03L51.36 34.76L50.98 34.58L50.57 34.45L50.16 34.36L49.76 34.32L49.35 34.32L48.94 34.36L48.53 34.46L48.09 34.62L47.72 34.81L47.45 34.98L47.31 35.09L47.02 35.36L46.9 35.49L46.7 35.74L46.49 36.07L46.28 36.51L46.16 36.91L46.09 37.3L46.07 37.7L46.06 38.5L46.04 39.71L46.03 40.53L46 41.76L45.98 42.59L45.94 43.83L45.9 45.08L45.85 46.33L45.85 46.74L45.9 47.16L46 47.58L46.16 48L46.37 48.42L46.57 48.72L46.67 48.85L46.96 49.17L47.08 49.28L47.35 49.5Z';
+
+/** Map the 92-space eye poses onto our 100-space head. */
+const EYE_TRANSFORM = 'translate(-45.08 -48.82) scale(2.1354)';
 
 type BotMarkProps = {
-  /** Rendered width and height. Defaults to 1em, so it tracks the text. */
   size?: number | string;
-  /** Head colour. */
   fg?: string;
-  /** Eye colour (should match the surface behind the mark). */
   bg?: string;
-  /** Animate gaze, blink, and the asymmetric squint. */
   animated?: boolean;
-  /** Accessible label. Omit to mark the bot as decorative. */
+  /** Fill the head with a slow, colour-changing gradient. */
+  gradient?: boolean;
   title?: string;
   className?: string;
   style?: CSSProperties;
@@ -36,12 +37,14 @@ export function BotMark({
   fg = 'currentColor',
   bg = '#0a0a0a',
   animated = false,
+  gradient = false,
   title,
   className,
   style,
 }: BotMarkProps) {
   const eyeLeft = useRef<SVGGElement>(null);
   const eyeRight = useRef<SVGGElement>(null);
+  const gradientId = `bot-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   useEffect(() => {
     if (!animated) return;
@@ -49,10 +52,8 @@ export function BotMark({
     const b = eyeRight.current;
     if (!a || !b) return;
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    // Pointer gaze, in −1…1, relative to the mark itself.
     let px = 0;
     let py = 0;
     let hasPointer = false;
@@ -77,18 +78,15 @@ export function BotMark({
       last = now;
       const t = now / 1000;
 
-      // Without a pointer, the eyes wander on their own.
       const idleX = Math.sin(t * 0.43) * 0.6 + Math.sin(t * 0.19 + 1.7) * 0.25;
       const idleY = Math.sin(t * 0.31 + 1.2) * 0.4;
       const tx = hasPointer ? Math.max(-1, Math.min(1, px)) : idleX;
       const ty = hasPointer ? Math.max(-1, Math.min(1, py)) : idleY;
 
-      // Critically-damped follow, so the eyes lag the cursor a little.
       const k = 1 - Math.exp(-7.5 * dt);
       gx += (tx - gx) * k;
       gy += (ty - gy) * k;
 
-      // Blink: quick close, slightly slower open.
       if (blinkStart < 0 && now > nextBlink) {
         blinkStart = now;
         nextBlink = now + 2600 + Math.random() * 2800;
@@ -100,17 +98,18 @@ export function BotMark({
         else if (e < 190) blink = 1 - (e - 70) / 120;
         else blinkStart = -1;
       }
-      const open = 1 - 0.9 * blink;
+      const open = 1 - 0.92 * blink;
 
-      // Each eye breathes on its own; the right one occasionally pops wide.
       const breathe = Math.sin(t * 0.62);
       const pop = Math.pow(Math.max(0, Math.sin(t * 0.29 + 0.4)), 8);
-      const leftScale = 1 + 0.035 * breathe;
-      const rightScale = 1 - 0.045 * breathe + 0.22 * pop;
+      const leftScale = 1 + 0.03 * breathe;
+      const rightScale = 1 - 0.04 * breathe + 0.18 * pop;
 
-      const dx = gx * 4.4;
-      const dy = gy * 3.4;
-      const tilt = gx * 4;
+      // Values are in the 92-space the eye paths use; the parent group
+      // scales them up to the head.
+      const dx = gx * 2.1;
+      const dy = gy * 1.7;
+      const tilt = gx * 2.2;
 
       a.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${leftScale}, ${open})`;
       b.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${rightScale}, ${open})`;
@@ -119,7 +118,6 @@ export function BotMark({
     };
 
     raf = requestAnimationFrame(tick);
-
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('pointermove', onMove);
@@ -138,12 +136,23 @@ export function BotMark({
       focusable="false"
     >
       {title ? <title>{title}</title> : null}
-      <path d={HEAD} fill={fg} />
-      <g ref={eyeLeft} className="grok-eye">
-        <path d={EYE_LEFT} fill={bg} />
-      </g>
-      <g ref={eyeRight} className="grok-eye">
-        <path d={EYE_RIGHT} fill={bg} />
+      {gradient ? (
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#F19D38" className="grok-grad-a" />
+            <stop offset="50%" stopColor="#885CF5" className="grok-grad-b" />
+            <stop offset="100%" stopColor="#3C82F6" className="grok-grad-c" />
+          </linearGradient>
+        </defs>
+      ) : null}
+      <path d={HEAD} fill={gradient ? `url(#${gradientId})` : fg} />
+      <g transform={EYE_TRANSFORM}>
+        <g ref={eyeLeft} className="grok-eye">
+          <path d={EYE_LEFT} fill={bg} />
+        </g>
+        <g ref={eyeRight} className="grok-eye">
+          <path d={EYE_RIGHT} fill={bg} />
+        </g>
       </g>
     </svg>
   );

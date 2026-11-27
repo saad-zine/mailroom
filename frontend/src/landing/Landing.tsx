@@ -1,25 +1,22 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { BrandMark } from './BrandMark';
 import { BotMark } from './GrokBot';
+import { signInDemo } from '../lib/demoAuth';
 import './landing.css';
 
-/** The nine tinted heads from x.ai's bot row. */
-const BOT_TINTS = [
-  '#97683D',
-  '#EA4045',
-  '#ED712E',
-  '#F19D38',
-  '#5BC67A',
-  '#54B9A6',
-  '#3C82F6',
-  '#885CF5',
-  '#EB4699',
+const NAV = [
+  { href: '#top', label: 'Overview' },
+  { href: '#how', label: 'How it works' },
+  { href: '#app', label: 'Workspace' },
+  { href: '#privacy', label: 'Privacy' },
+  { href: '#start', label: 'Start' },
 ];
 
-const NAV = [
-  { href: '#how', label: 'How it works' },
-  { href: '#app', label: 'The app' },
-  { href: '#privacy', label: 'Privacy' },
+const DETAILS = [
+  { label: 'Read & draft', body: 'The only Gmail access Mailroom asks for.' },
+  { label: 'Source-backed', body: 'Every draft shows the chunks behind it.' },
+  { label: 'Human gate', body: 'Nothing leaves your Gmail until you approve.' },
+  { label: 'Isolated', body: 'One workspace per account, enforced in the database.' },
 ];
 
 const STEPS = [
@@ -93,6 +90,14 @@ function Word({ children, i }: { children: string; i: number }) {
 
 export default function Landing() {
   const [solid, setSolid] = useState(false);
+  const [formEmail, setFormEmail] = useState('');
+  const [formPassword, setFormPassword] = useState('');
+
+  const startDemo = (event: FormEvent) => {
+    event.preventDefault();
+    signInDemo();
+    window.location.assign('/app');
+  };
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 40);
@@ -161,16 +166,18 @@ export default function Landing() {
           </span>
 
           <h1 className="lp-h1">
-            <Word i={0}>Meet</Word>{' '}
-            <span className="lp-word lp-bot-inline" style={{ '--i': 1 } as CSSProperties}>
-              <BotMark size="100%" animated />
+            <Word i={0}>Your</Word>{' '}
+            <Word i={1}>inbox,</Word>{' '}
+            <span className="lp-word lp-bot-inline" style={{ '--i': 2 } as CSSProperties}>
+              <BotMark size="100%" animated gradient />
             </span>{' '}
-            <Word i={2}>Mailroom</Word>
+            <Word i={3}>handled.</Word>
           </h1>
 
           <p className="lp-hero-sub">
-            Mailroom reads your inbox, drafts the reply in your voice, and waits.
-            Nothing leaves your Gmail until you say so.
+            Mailroom reads every new email, drafts a reply in your voice with the
+            sources shown, and waits for your approval. Nothing leaves your Gmail
+            until you say so.
           </p>
 
           <div className="lp-hero-actions">
@@ -184,16 +191,36 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="lp-bot-row" aria-hidden="true">
-          {BOT_TINTS.map((tint, index) => (
-            <span
-              className="lp-bot-row-item"
-              key={tint}
-              style={{ '--i': index } as CSSProperties}
+        <div className="lp-detail-strip">
+          {DETAILS.map((detail, index) => (
+            <div
+              className="lp-detail"
+              key={detail.label}
+              data-reveal
+              style={{ '--delay': `${index * 60}ms` } as CSSProperties}
             >
-              <BotMark size="100%" fg={tint} bg="#0a0a0a" />
-            </span>
+              <span className="lp-detail-label">{detail.label}</span>
+              <p>{detail.body}</p>
+            </div>
           ))}
+        </div>
+
+        <div className="lp-demo-wrap" data-reveal>
+          <div className="lp-demo">
+            <video
+              src="/mailroom-demo.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label="Mailroom product walkthrough: an email arrives, a sourced reply is drafted, and the draft is saved only after approval."
+            />
+          </div>
+          <div className="lp-demo-caption">
+            <span>Product walkthrough — rendered with Remotion</span>
+            <span>Mailroom / 00:12</span>
+          </div>
         </div>
       </section>
 
@@ -303,13 +330,59 @@ export default function Landing() {
         </section>
       </main>
 
+      <section className="lp-start" id="start">
+        <div className="lp-start-inner" data-reveal>
+          <div className="lp-start-copy">
+            <p className="lp-eyebrow">Get started</p>
+            <h2>
+              Open the <em>mailroom.</em>
+            </h2>
+            <p>
+              Create a workspace and connect Gmail. Mailroom drafts the first reply
+              and waits for your decision — no password setup needed in this demo.
+            </p>
+          </div>
+
+          <form className="lp-form-card" onSubmit={startDemo}>
+            <h3>Create your workspace</h3>
+            <p className="lp-form-note">Any email and password opens the portal.</p>
+            <div className="lp-form-fields">
+              <label>
+                <span>Email</span>
+                <input
+                  type="email"
+                  value={formEmail}
+                  onChange={(event) => setFormEmail(event.target.value)}
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                />
+              </label>
+              <label>
+                <span>Password</span>
+                <input
+                  type="password"
+                  value={formPassword}
+                  onChange={(event) => setFormPassword(event.target.value)}
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                />
+              </label>
+            </div>
+            <button className="lp-form-submit" type="submit">
+              Create account
+            </button>
+            <p className="lp-form-foot">Demo mode — any credentials work.</p>
+          </form>
+        </div>
+      </section>
+
       <section className="lp-close">
         <div className="lp-close-inner" data-reveal>
           <BotMark size={44} fg="#ffffff" bg="#050505" />
           <h2>
             <Word i={0}>Open</Word> <Word i={1}>the</Word>{' '}
             <span className="lp-word lp-bot-inline" style={{ '--i': 2 } as CSSProperties}>
-              <BotMark size="100%" fg="#ffffff" bg="#050505" animated />
+              <BotMark size="100%" bg="#050505" animated gradient />
             </span>{' '}
             <Word i={3}>mailroom.</Word>
           </h2>
