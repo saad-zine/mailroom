@@ -9,6 +9,7 @@ export default defineConfig({
   // so proxy /api to the backend on :8000. On Vercel the rewrite in
   // vercel.json does this instead — no proxy needed there.
   server: {
+    allowedHosts: ['sb-ihbo8pmlr5ko.vercel.run'],
     proxy: {
       '/api': 'http://localhost:8000',
     },

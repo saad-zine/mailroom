@@ -1,6 +1,5 @@
 import { Bell, Menu, Search } from 'lucide-react';
 import type { View } from '../App';
-import { BrandMark } from '../landing/BrandMark';
 import { Kbd } from './ui';
 
 /** One dark command bar: brand, working search, real queue count, account menu.
@@ -33,10 +32,11 @@ export function TopBar({
         className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-lg focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:outline-none"
         aria-label="Mailroom home"
       >
-        <BrandMark size={26} className="shrink-0" />
-        <span className="text-[15px] font-semibold tracking-[-0.02em] text-white">
-          Mailroom
-        </span>
+        <img
+          src="/mailroom-wordmark.png"
+          alt="Mailroom"
+          className="h-[18px] w-[102px] shrink-0 object-contain"
+        />
       </button>
 
       <div className="flex min-w-0 flex-1 justify-center px-1 sm:px-4">

@@ -131,8 +131,11 @@ export default function Landing() {
     <div className="lp">
       <nav className={`lp-nav${solid ? ' is-solid' : ''}`} aria-label="Main">
         <a className="lp-brand" href="#top" aria-label="Mailroom home">
-          <BrandMark size={22} />
-          <span className="lp-brand-word">Mailroom</span>
+          <img
+            src="/mailroom-wordmark.png"
+            alt="Mailroom"
+            className="h-[19px] w-[108px] object-contain"
+          />
         </a>
 
         <div className="lp-nav-links">
@@ -405,8 +408,11 @@ export default function Landing() {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <span className="lp-footer-brand">
-            <BrandMark size={18} />
-            Mailroom
+            <img
+              src="/mailroom-wordmark.png"
+              alt="Mailroom"
+              className="h-4 w-[90px] object-contain"
+            />
           </span>
           <div className="lp-footer-links">
             <a href="#how">How it works</a>
