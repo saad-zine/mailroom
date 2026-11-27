@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
 /**
- * A dot-matrix sculpture of a wax seal, drawn on canvas.
- *
+ * LetterScene — A dot-matrix sculpture of a wax seal, drawn on canvas.
  * The reference is a halftone classical bust on a saturated field; the
  * technique is the same, the object is ours: a thick pool of sealing wax
  * with an embossed monogram, sampled as a grid of points, lit and
@@ -427,3 +426,5 @@ export function LetterScene({
     </div>
   );
 }
+
+export default LetterScene;

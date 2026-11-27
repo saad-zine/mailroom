@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { LetterScene } from './MascotBot.tsx';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { LetterScene } from './LetterScene';
 import './landing.css';
 
 const NAV = [
@@ -53,13 +53,13 @@ function Arrow() {
   return (
     <svg
       className="lp-arrow"
-      width="11"
-      height="11"
-      viewBox="0 0 11 11"
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
       fill="none"
       aria-hidden="true"
     >
-      <path d="M2 9L9 2M9 2H3.5M9 2V7.5" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M3 11L11 3M11 3H5.5M11 3V8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -96,7 +96,7 @@ export default function Landing() {
     return () => observer.disconnect();
   }, []);
 
-  const firstDrag = useCallback(() => setDragged(true), []);
+  const firstDrag = () => setDragged(true);
 
   return (
     <div className="lp">
@@ -127,57 +127,36 @@ export default function Landing() {
 
       <section className="lp-hero" id="top">
         <div className="lp-hero-body">
-          <div className="lp-title">
-            <p className="lp-kicker">AI correspondence — private by default</p>
-            <h1>
-              <span className="lp-line">
-                <span>Correspondence,</span>
-              </span>
-              <span className="lp-line">
-                <span>considered.</span>
-              </span>
-            </h1>
-          </div>
+          <div className="lp-hero-inner">
+            <div className="lp-hero-grid">
+              <div className="lp-hero-text">
+                <p className="lp-kicker">AI correspondence — private by default</p>
+                <h1>
+                  Correspondence, <em>considered.</em>
+                </h1>
+                <p className="lp-hero-sub">
+                  Mailroom reads your inbox, drafts the reply in your voice, and waits.{' '}
+                  <b>Nothing leaves your Gmail until you say so.</b>
+                </p>
+                <div className="lp-hero-actions">
+                  <a className="lp-btn lp-btn-solid" href="/app">
+                    Open Mailroom
+                    <Arrow />
+                  </a>
+                  <a className="lp-btn lp-btn-ghost" href="#how">
+                    How it works
+                  </a>
+                </div>
+              </div>
 
-          <LetterScene className="lp-canvas" onFirstDrag={firstDrag} />
-
-          <div className={`lp-drag-hint${dragged ? ' is-used' : ''}`}>
-            360° — drag to rotate
-          </div>
-
-          <div className="lp-meta">
-            <div className="lp-meta-item">
-              <span className="lp-meta-row">
-                <span className="lp-sq" aria-hidden="true" />
-                <b>Gmail</b>
-              </span>
-              <small>reads &amp; drafts</small>
-            </div>
-            <div className="lp-meta-item">
-              <span className="lp-meta-row">
-                <span className="lp-sq" aria-hidden="true" />
-                <b>Approval</b>
-              </span>
-              <small>yours alone</small>
+              <div className="lp-hero-visual">
+                <LetterScene className="lp-bot-canvas" onFirstDrag={firstDrag} />
+                <div className={`lp-drag-hint${dragged ? ' is-used' : ''}`}>
+                  360° — drag to rotate
+                </div>
+              </div>
             </div>
           </div>
-
-          <p className="lp-blurb">
-            Mailroom reads your inbox, drafts the reply in your voice, and waits.{' '}
-            <b>Nothing leaves your Gmail until you say so.</b>
-          </p>
-
-          <div className="lp-outro">
-            Nothing
-            <br />
-            <em>sends itself.</em>
-          </div>
-        </div>
-
-        <div className="lp-hero-grain" aria-hidden="true" />
-        <div className="lp-scroll" aria-hidden="true">
-          Scroll
-          <i />
         </div>
       </section>
 
@@ -188,23 +167,20 @@ export default function Landing() {
               <div>
                 <p className="lp-eyebrow">How it works</p>
                 <h2>
-                  Three steps.
-                  <br />
-                  <em>You keep the pen.</em>
+                  Three steps. <em>You keep the pen.</em>
                 </h2>
               </div>
               <p>
-                Mailroom is a copilot, not an auto-responder. It prepares the reply and leaves
-                the decision where it belongs.
+                Mailroom is a copilot, not an auto-responder. It prepares the reply and
+                leaves the decision where it belongs.
               </p>
             </div>
 
-            <div className="lp-steps">
+            <div className="lp-steps" data-reveal>
               {STEPS.map((step, index) => (
                 <article
                   className="lp-step"
                   key={step.n}
-                  data-reveal
                   style={{ '--delay': `${index * 90}ms` } as CSSProperties}
                 >
                   <span className="lp-step-num">{step.n}</span>
@@ -226,8 +202,8 @@ export default function Landing() {
                 </h2>
               </div>
               <p>
-                The inbox, the drafts, and the knowledge behind them — with the reasoning left
-                visible, so you can check the work before you sign it.
+                The inbox, the drafts, and the knowledge behind them — with the reasoning
+                left visible, so you can check the work before you sign it.
               </p>
             </div>
 
@@ -248,8 +224,8 @@ export default function Landing() {
 
               <div className="lp-shot-cta">
                 <p>
-                  Connect a Gmail account and the first drafts appear in the queue. Edit them,
-                  approve them, or throw them away — the call is always yours.
+                  Connect a Gmail account and the first drafts appear in the queue. Edit
+                  them, approve them, or throw them away — the call is always yours.
                 </p>
                 <a className="lp-btn lp-btn-ink" href="/app">
                   Open Mailroom
@@ -270,17 +246,16 @@ export default function Landing() {
                 </h2>
               </div>
               <p>
-                The narrowest access that works, encrypted at rest, isolated by account. If you
-                want out, one click disconnects the account.
+                The narrowest access that works, encrypted at rest, isolated by account. If
+                you want out, one click disconnects the account.
               </p>
             </div>
 
-            <div className="lp-facts">
+            <div className="lp-facts" data-reveal>
               {FACTS.map((fact, index) => (
                 <article
                   className="lp-fact"
                   key={fact.label}
-                  data-reveal
                   style={{ '--delay': `${(index % 2) * 80}ms` } as CSSProperties}
                 >
                   <span className="lp-fact-label">{fact.label}</span>
@@ -294,9 +269,9 @@ export default function Landing() {
       </main>
 
       <section className="lp-close">
-        <div className="lp-wrap lp-close-inner">
+        <div className="lp-close-inner">
           <div data-reveal>
-            <p className="lp-eyebrow" style={{ color: 'rgba(241,234,217,0.5)' }}>
+            <p className="lp-eyebrow" style={{ color: 'rgba(255,255,255,0.48)' }}>
               Start
             </p>
             <h2>

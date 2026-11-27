@@ -1,249 +1,44 @@
 @import "tailwindcss";
 
-/* Self-hosted type system — Instrument Sans for interface, Instrument Serif
-   for display, JetBrains Mono for labels and figures. No third-party font
-   requests at runtime. */
+/* ==========================================================================
+   Mailroom — type system (Grok-style)
+   Inter (sans) + Geist Mono (mono). Self-hosted latin subsets.
+   ========================================================================== */
+
 @font-face {
-  font-family: "Instrument Sans";
+  font-family: 'Inter';
   font-style: normal;
-  font-weight: 400 700;
+  font-weight: 300 800;
   font-display: swap;
-  src: url("/fonts/instrument-sans-normal-400-700.woff2") format("woff2");
+  src: url('/fonts/inter-normal-300-800.woff2') format('woff2');
 }
+
 @font-face {
-  font-family: "Instrument Sans";
-  font-style: italic;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("/fonts/instrument-sans-italic-400-700.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Instrument Serif";
+  font-family: 'Geist Mono';
   font-style: normal;
-  font-weight: 400;
+  font-weight: 300 600;
   font-display: swap;
-  src: url("/fonts/instrument-serif-normal-400.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Instrument Serif";
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/instrument-serif-italic-400.woff2") format("woff2");
-}
-@font-face {
-  font-family: "JetBrains Mono";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("/fonts/jetbrains-mono-normal-400-600.woff2") format("woff2");
+  src: url('/fonts/geist-mono-normal-300-600.woff2') format('woff2');
 }
 
 @theme {
-  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  /* Mailroom — premium workspace palette */
-  --color-ink: #15171c;
-  --color-body: #33363d;
-  --color-muted: #6b7078;
-  --color-faint: #9aa0a8;
-  --color-paper: #ffffff;
-  --color-canvas: #f3f3f0;
-  --color-wash: #f8f8f6;
-  --color-border: #e7e7e2;
-  --color-border-strong: #d7d7d0;
-
-  --color-teal: #0f7a6d;
-  --color-teal-deep: #0a5d53;
-  --color-tint-teal: #edf9f6;
-
-  --color-success: #137a46;
-  --color-tint-success: #ecf8f1;
-  --color-warning: #b45309;
-  --color-tint-warning: #fff8ec;
-  --color-error: #c0392b;
-  --color-tint-error: #fdf1f0;
-  --color-info: #2f5fd0;
-  --color-tint-info: #eef3ff;
-  --color-neutral-tint: #f1f1ed;
-
-  --shadow-xs: 0 1px 2px rgba(20, 23, 28, 0.05);
-  --shadow-card: 0 1px 2px rgba(20, 23, 28, 0.04), 0 2px 8px -2px rgba(20, 23, 28, 0.06);
-  --shadow-float: 0 8px 24px -10px rgba(20, 23, 28, 0.16), 0 2px 6px rgba(20, 23, 28, 0.04);
-  --shadow-pop: 0 28px 70px -18px rgba(20, 23, 28, 0.32), 0 10px 24px -12px rgba(20, 23, 28, 0.14);
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif: 'Inter', system-ui, sans-serif;
 }
 
+/* Smooth scrolling for the landing page anchor links. */
 html {
   scroll-behavior: smooth;
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
-
 body {
-  margin: 0;
-  background: var(--color-canvas);
-  color: var(--color-body);
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-::selection {
-  background: rgba(15, 122, 109, 0.16);
-}
-
-/* Slim, quiet scrollbars */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #d7d7d0 transparent;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #d7d7d0;
-  border: 3px solid transparent;
-  background-clip: content-box;
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #c2c2ba;
-  border: 3px solid transparent;
-  background-clip: content-box;
-}
-
-/* ---------- Texture + motion helpers ---------- */
-
-.dot-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
-  background-size: 18px 18px;
-}
-
-.dot-grid-light {
-  background-image: radial-gradient(rgba(21, 23, 28, 0.08) 1px, transparent 1px);
-  background-size: 16px 16px;
-}
-
-.tnum {
-  font-variant-numeric: tabular-nums;
-}
-
-.text-balance {
-  text-wrap: balance;
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pop {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
-}
-
-@keyframes soft-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35);
-  }
-  50% {
-    opacity: 0.9;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0);
-  }
-}
-
-.animate-rise {
-  animation: rise 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.animate-pop {
-  animation: pop 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.animate-fade {
-  animation: fade 0.2s ease both;
-}
-
-.live-dot {
-  animation: soft-pulse 2.4s ease-in-out infinite;
-}
-
-.skeleton {
-  background: linear-gradient(90deg, #f1f1ed 25%, #fafaf8 37%, #f1f1ed 63%);
-  background-size: 400% 100%;
-  animation: shimmer 1.4s ease infinite;
-}
-
-/* Layered card edge — a hairline highlight on top of the ring */
-.card-edge {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 1px 2px rgba(20, 23, 28, 0.04),
-    0 2px 8px -2px rgba(20, 23, 28, 0.06);
-}
-
-/* Clip long previews in the draft cards */
-.clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+/* R3F canvas transparent */
+canvas {
+  outline: none;
 }
