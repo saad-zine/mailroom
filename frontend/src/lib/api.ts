@@ -71,6 +71,21 @@ export interface KbDoc {
   created_at: string;
 }
 
+export interface Me {
+  id: string;
+  email: string | null;
+  workspace_id: string;
+  authenticated: boolean;
+}
+
+export interface GmailStatus {
+  connected: boolean;
+  email: string | null;
+  last_sync_at: string | null;
+  watch_expires_at: string | null;
+  scopes: string[];
+}
+
 export interface Health {
   status: string;
   mode: 'mock' | 'live';
@@ -116,9 +131,12 @@ export class ApiError extends Error {
 }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('mailroom_token');
+  const headers = new Headers(init?.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, init);
+    res = await fetch(`${BASE}${path}`, { ...init, headers });
   } catch {
     throw new ApiError(
       `Could not reach the Mailroom API at ${BASE}. Is the backend running?`,
@@ -152,6 +170,10 @@ function unwrapDraft(data: unknown): Draft {
 
 export const api = {
   health: () => req<Health>('/health'),
+  me: () => req<Me>('/api/me'),
+  gmailStatus: () => req<GmailStatus>('/api/gmail/status'),
+  gmailConnect: () => req<{ url: string }>('/api/gmail/connect'),
+  gmailDisconnect: () => req<{ disconnected: boolean }>('/api/gmail/disconnect', { method: 'POST' }),
   stats: () => req<Stats>('/api/stats'),
   settings: () => req<SettingsInfo>('/api/settings'),
 

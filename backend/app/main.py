@@ -20,10 +20,12 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
-from . import kb, mock_engine
+from . import gmail_cloud, gmail_webhook, kb, mock_engine
+from .auth import current_workspace, require_cron_secret
 from .config import VERSION, settings
 from .db import connect, from_json, to_json, utcnow_iso, init_db
 from .gmail_client import create_gmail_draft, gmail_connected
@@ -54,10 +56,11 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------------- helpers
-def _email_row(row: dict) -> dict:
+def _email_row(row: dict, workspace: str = "local") -> dict:
     with connect() as conn:
         has_draft = conn.execute(
-            "SELECT 1 FROM drafts WHERE email_id = ?", (row["id"],)
+            "SELECT 1 FROM drafts WHERE email_id = ? AND workspace_id=?",
+            (row["id"], row.get("workspace_id") or workspace),
         ).fetchone() is not None
     return {
         "id": row["id"],
@@ -89,34 +92,107 @@ def _draft_row(row: dict) -> dict:
     }
 
 
-def _get_draft_or_404(draft_id: int) -> dict:
+def _get_draft_or_404(draft_id: int, workspace: str = "local") -> dict:
     with connect() as conn:
         row = conn.execute(
-            "SELECT * FROM drafts WHERE id = ?", (draft_id,)).fetchone()
+            "SELECT * FROM drafts WHERE id = ? AND workspace_id=?",
+            (draft_id, workspace),
+        ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="draft not found")
     return dict(row)
 
 
-def _start_run() -> dict:
+def _start_run(workspace: str = "local") -> dict:
     # Live mode without an LLM key: refuse with a clear setup message
     # instead of starting a run that cannot do real work.
     if settings.mode == "live" and not settings.llm_available:
         raise HTTPException(
             status_code=503,
             detail=settings.setup_hint or "GROQ_API_KEY is not set.")
-    run = create_run()
+    run = create_run(workspace)
     # Synchronous: the workflow runs inside this request and finishes
     # before we return. A detached thread is unreliable on serverless —
     # the platform may freeze the instance once the response is sent,
     # so the run would die halfway. The frontend polls
     # GET /api/runs/{id} and sees the final status right away.
-    run_workflow(run["id"])
+    run_workflow(run["id"], workspace)
     with connect() as conn:
         row = conn.execute(
-            "SELECT status FROM runs WHERE id = ?", (run["id"],)).fetchone()
+            "SELECT status FROM runs WHERE id = ? AND workspace_id=?",
+            (run["id"], workspace)).fetchone()
     return {"run_id": run["id"],
             "status": row["status"] if row else "completed"}
+
+
+# ---------------------------------------------------------------- account + Gmail
+@app.get("/api/me")
+def get_me(request: Request, workspace: str = Depends(current_workspace)):
+    claims = getattr(request.state, "claims", {}) or {}
+    return {
+        "id": workspace,
+        "workspace_id": workspace,
+        "email": claims.get("email"),
+        "authenticated": settings.auth_enabled,
+    }
+
+
+@app.get("/api/gmail/connect")
+def gmail_connect(workspace: str = Depends(current_workspace)):
+    if not settings.gmail_oauth_configured:
+        raise HTTPException(status_code=503, detail="Gmail OAuth is not configured")
+    return {"url": gmail_cloud.authorize_url(workspace)}
+
+
+@app.get("/api/gmail/callback")
+def gmail_callback(code: str | None = None, state: str | None = None,
+                   error: str | None = None):
+    base = settings.app_url or "/"
+    if error or not code or not state:
+        return RedirectResponse(url=f"{base}/settings?gmail=error", status_code=302)
+    try:
+        gmail_cloud.exchange_code(code, state)
+    except Exception as exc:
+        print(f"[gmail] oauth callback failed: {exc}")
+        return RedirectResponse(url=f"{base}/settings?gmail=error", status_code=302)
+    return RedirectResponse(url=f"{base}/settings?gmail=connected", status_code=302)
+
+
+@app.get("/api/gmail/status")
+def gmail_status(workspace: str = Depends(current_workspace)):
+    return gmail_cloud.status(workspace)
+
+
+@app.post("/api/gmail/disconnect")
+def gmail_disconnect(workspace: str = Depends(current_workspace)):
+    gmail_cloud.disconnect(workspace)
+    return {"disconnected": True}
+
+
+@app.post("/api/gmail/webhook")
+async def gmail_webhook(request: Request):
+    gmail_webhook.verify_google_jwt(request)
+    payload = await request.json()
+    return gmail_webhook.handle_push(payload)
+
+
+@app.get("/api/cron/renew-watches")
+def renew_watches(request: Request):
+    require_cron_secret(request)
+    renewed = 0
+    with connect() as conn:
+        workspaces = [
+            r[0] for r in conn.execute(
+                "SELECT workspace_id FROM gmail_connections WHERE status='connected'"
+            ).fetchall()
+        ]
+    for workspace in workspaces:
+        try:
+            gmail_cloud.start_watch(workspace)
+            renewed += 1
+        except Exception as exc:
+            print(f"[cron] watch renewal failed for {workspace}: {exc}")
+    return {"renewed": renewed}
 
 
 # ---------------------------------------------------------------- health/settings
@@ -153,23 +229,33 @@ def get_settings():
 
 
 @app.get("/api/stats")
-def get_stats():
+def get_stats(workspace: str = Depends(current_workspace)):
     with connect() as conn:
-        total = conn.execute("SELECT COUNT(*) FROM emails").fetchone()[0]
+        total = conn.execute(
+            "SELECT COUNT(*) FROM emails WHERE workspace_id=?", (workspace,)
+        ).fetchone()[0]
         by_cat = {c: 0 for c in mock_engine.CATEGORIES}
         for r in conn.execute(
-                "SELECT category, COUNT(*) n FROM emails GROUP BY category"):
+                "SELECT category, COUNT(*) n FROM emails WHERE workspace_id=? "
+                "GROUP BY category", (workspace,)):
             if r["category"]:
                 by_cat[r["category"]] = r["n"]
         pending = conn.execute(
-            "SELECT COUNT(*) FROM drafts WHERE status='pending'").fetchone()[0]
+            "SELECT COUNT(*) FROM drafts WHERE status='pending' AND workspace_id=?",
+            (workspace,),
+        ).fetchone()[0]
         approved = conn.execute(
-            "SELECT COUNT(*) FROM drafts WHERE status='approved'").fetchone()[0]
+            "SELECT COUNT(*) FROM drafts WHERE status='approved' AND workspace_id=?",
+            (workspace,),
+        ).fetchone()[0]
         rejected = conn.execute(
-            "SELECT COUNT(*) FROM drafts WHERE status='rejected'").fetchone()[0]
+            "SELECT COUNT(*) FROM drafts WHERE status='rejected' AND workspace_id=?",
+            (workspace,),
+        ).fetchone()[0]
         pairs = conn.execute(
             """SELECT e.received_at AS received, d.created_at AS created
-               FROM drafts d JOIN emails e ON e.id = d.email_id"""
+               FROM drafts d JOIN emails e ON e.id = d.email_id
+               WHERE d.workspace_id=?""", (workspace,),
         ).fetchall()
     decided = approved + rejected
     approval_rate = (approved / decided) if decided else 0.0
@@ -197,9 +283,10 @@ def get_stats():
 @app.get("/api/emails")
 def list_emails(category: str | None = Query(default=None),
                 status: str | None = Query(default=None),
-                limit: int = Query(default=50, ge=1, le=200)):
+                limit: int = Query(default=50, ge=1, le=200),
+                workspace: str = Depends(current_workspace)):
     query = "SELECT * FROM emails"
-    clauses, params = [], []
+    clauses, params = ["workspace_id = ?"], [workspace]
     if category:
         clauses.append("category = ?")
         params.append(category)
@@ -212,20 +299,22 @@ def list_emails(category: str | None = Query(default=None),
     params.append(limit)
     with connect() as conn:
         rows = conn.execute(query, params).fetchall()
-    return {"emails": [_email_row(dict(r)) for r in rows]}
+    return {"emails": [_email_row(dict(r), workspace) for r in rows]}
 
 
 @app.get("/api/emails/{email_id}")
-def get_email(email_id: int):
+def get_email(email_id: int, workspace: str = Depends(current_workspace)):
     with connect() as conn:
         row = conn.execute(
-            "SELECT * FROM emails WHERE id = ?", (email_id,)).fetchone()
+            "SELECT * FROM emails WHERE id = ? AND workspace_id=?",
+            (email_id, workspace)).fetchone()
         draft_row = conn.execute(
-            "SELECT * FROM drafts WHERE email_id = ? ORDER BY id DESC LIMIT 1",
-            (email_id,)).fetchone() if row else None
+            "SELECT * FROM drafts WHERE email_id = ? AND workspace_id=? "
+            "ORDER BY id DESC LIMIT 1",
+            (email_id, workspace)).fetchone() if row else None
     if row is None:
         raise HTTPException(status_code=404, detail="email not found")
-    email = _email_row(dict(row))
+    email = _email_row(dict(row), workspace)
     draft = _draft_row(dict(draft_row)) if draft_row else None
     if draft_row:
         rag_context = from_json(draft_row["rag_context_json"], default=[]) or []
@@ -233,29 +322,76 @@ def get_email(email_id: int):
         rag_context = mock_engine.mock_rag(
             f"{email['subject']} {email['body']}") \
             if settings.mode == "mock" else kb.retrieve(
-            f"{email['subject']} {email['body']}")
+            f"{email['subject']} {email['body']}", 3, workspace)
         rag_context = [{"chunk": c["chunk"], "source": settings.mode}
                        for c in rag_context]
     return {"email": email, "draft": draft, "rag_context": rag_context}
 
 
 # ---------------------------------------------------------------- runs
+def _drain_jobs(workspace: str, limit: int = 10) -> int:
+    """Process queued webhook jobs in bounded batches."""
+    with connect() as conn:
+        jobs = conn.execute(
+            "SELECT id, email_id, attempts FROM jobs WHERE workspace_id=? AND status='pending' "
+            "ORDER BY id LIMIT ?", (workspace, limit),
+        ).fetchall()
+    processed = 0
+    for job in jobs:
+        try:
+            run = create_run(workspace)
+            run_workflow(run["id"], workspace, [job["email_id"]])
+            with connect() as conn:
+                conn.execute(
+                    "UPDATE jobs SET status='done', attempts=attempts+1 WHERE id=?",
+                    (job["id"],),
+                )
+            processed += 1
+        except Exception as exc:
+            with connect() as conn:
+                conn.execute(
+                    "UPDATE jobs SET status=?, attempts=attempts+1, error=? WHERE id=?",
+                    ("failed" if job["attempts"] >= 2 else "pending", str(exc)[:500], job["id"]),
+                )
+    return processed
+
+
 @app.post("/api/runs")
-def start_run():
-    return _start_run()
+def start_run(workspace: str = Depends(current_workspace)):
+    result = _start_run(workspace)
+    result["jobs_processed"] = _drain_jobs(workspace)
+    return result
 
 
 @app.get("/api/cron/poll")
-def cron_poll():
-    """Vercel Cron entry point — same effect as POST /api/runs."""
-    return _start_run()
+def cron_poll(request: Request):
+    """Legacy poll endpoint — secured, processes each connected workspace."""
+    require_cron_secret(request)
+    with connect() as conn:
+        workspaces = [
+            r[0] for r in conn.execute(
+                "SELECT DISTINCT workspace_id FROM gmail_connections WHERE status='connected'"
+            ).fetchall()
+        ]
+    if not workspaces:
+        workspaces = ["local"]
+    results = []
+    for ws in workspaces:
+        try:
+            result = _start_run(ws)
+            result["jobs_processed"] = _drain_jobs(ws)
+            results.append(result)
+        except HTTPException as exc:
+            results.append({"workspace_id": ws, "error": exc.detail})
+    return {"runs": results}
 
 
 @app.get("/api/runs/{run_id}")
-def get_run(run_id: int):
+def get_run(run_id: int, workspace: str = Depends(current_workspace)):
     with connect() as conn:
         run = conn.execute(
-            "SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+            "SELECT * FROM runs WHERE id = ? AND workspace_id=?",
+            (run_id, workspace)).fetchone()
         steps = conn.execute(
             "SELECT seq, node, detail, status FROM run_steps "
             "WHERE run_id = ? ORDER BY seq", (run_id,)).fetchall() \
@@ -273,11 +409,12 @@ def get_run(run_id: int):
 
 # ---------------------------------------------------------------- drafts
 @app.get("/api/drafts")
-def list_drafts(status: str | None = Query(default="pending")):
-    query = "SELECT * FROM drafts"
-    params: list = []
+def list_drafts(status: str | None = Query(default="pending"),
+                workspace: str = Depends(current_workspace)):
+    query = "SELECT * FROM drafts WHERE workspace_id = ?"
+    params: list = [workspace]
     if status:
-        query += " WHERE status = ?"
+        query += " AND status = ?"
         params.append(status)
     query += " ORDER BY created_at DESC"
     with connect() as conn:
@@ -286,36 +423,45 @@ def list_drafts(status: str | None = Query(default="pending")):
 
 
 @app.get("/api/drafts/{draft_id}")
-def get_draft(draft_id: int):
-    return {"draft": _draft_row(_get_draft_or_404(draft_id))}
+def get_draft(draft_id: int, workspace: str = Depends(current_workspace)):
+    return {"draft": _draft_row(_get_draft_or_404(draft_id, workspace))}
 
 
 @app.put("/api/drafts/{draft_id}")
-def edit_draft(draft_id: int, payload: DraftEdit):
-    draft = _get_draft_or_404(draft_id)
+def edit_draft(draft_id: int, payload: DraftEdit,
+               workspace: str = Depends(current_workspace)):
+    draft = _get_draft_or_404(draft_id, workspace)
     if draft["status"] != "pending":
         raise HTTPException(
             status_code=409,
             detail=f"cannot edit a {draft['status']} draft")
     with connect() as conn:
-        conn.execute("UPDATE drafts SET body = ? WHERE id = ?",
-                     (payload.body, draft_id))
-    return {"draft": _draft_row(_get_draft_or_404(draft_id))}
+        conn.execute(
+            "UPDATE drafts SET body = ? WHERE id = ? AND workspace_id=?",
+            (payload.body, draft_id, workspace),
+        )
+    return {"draft": _draft_row(_get_draft_or_404(draft_id, workspace))}
 
 
 def _record_decision(draft_id: int, action: str, note: str | None,
-                     decided_by: str | None) -> None:
+                     decided_by: str | None, workspace: str = "local") -> None:
     with connect() as conn:
         conn.execute(
-            "INSERT INTO decisions(draft_id, action, note, decided_by, decided_at)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (draft_id, action, note or "", decided_by or "human", utcnow_iso()),
+            "INSERT INTO decisions(workspace_id, draft_id, action, note, decided_by, decided_at)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (workspace, draft_id, action, note or "", decided_by or "human", utcnow_iso()),
+        )
+        conn.execute(
+            "INSERT INTO audit_logs(workspace_id, action, actor, detail, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (workspace, action, decided_by or "human", note or "", utcnow_iso()),
         )
 
 
 @app.post("/api/drafts/{draft_id}/approve")
-def approve_draft(draft_id: int, payload: DraftApprove | None = None):
-    draft = _get_draft_or_404(draft_id)
+def approve_draft(draft_id: int, payload: DraftApprove | None = None,
+                  workspace: str = Depends(current_workspace)):
+    draft = _get_draft_or_404(draft_id, workspace)
     if draft["status"] == "rejected":
         raise HTTPException(
             status_code=409,
@@ -327,10 +473,22 @@ def approve_draft(draft_id: int, payload: DraftApprove | None = None):
     note = (payload.note if payload else None) or ""
     decided_by = (payload.decided_by if payload else None) or "human"
     gmail_draft_id = None
-    if settings.mode == "live" and gmail_connected():
+    is_hosted = settings.auth_enabled and gmail_cloud.connection(workspace)
+    if settings.mode == "live" and is_hosted:
         with connect() as conn:
             email_row = conn.execute(
-                "SELECT * FROM emails WHERE id = ?", (draft["email_id"],)
+                "SELECT * FROM emails WHERE id = ? AND workspace_id=?",
+                (draft["email_id"], workspace),
+            ).fetchone()
+        gmail_draft_id = gmail_cloud.create_draft(
+            workspace, dict(email_row) if email_row else {}, draft["body"])
+        note = (note + f" [gmail draft: {gmail_draft_id}]") \
+            if gmail_draft_id else (note + " [gmail draft creation failed]")
+    elif settings.mode == "live" and gmail_connected():
+        with connect() as conn:
+            email_row = conn.execute(
+                "SELECT * FROM emails WHERE id = ? AND workspace_id=?",
+                (draft["email_id"], workspace),
             ).fetchone()
         gmail_draft = create_gmail_draft(
             dict(email_row) if email_row else {}, draft["body"])
@@ -348,16 +506,17 @@ def approve_draft(draft_id: int, payload: DraftApprove | None = None):
     with connect() as conn:
         conn.execute(
             "UPDATE drafts SET status='approved', decided_by=?, "
-            "decision_note=? WHERE id = ?",
-            (decided_by, note, draft_id),
+            "decision_note=? WHERE id = ? AND workspace_id=?",
+            (decided_by, note, draft_id, workspace),
         )
-    _record_decision(draft_id, "approved", note, decided_by)
-    return {"draft": _draft_row(_get_draft_or_404(draft_id))}
+    _record_decision(draft_id, "approved", note, decided_by, workspace)
+    return {"draft": _draft_row(_get_draft_or_404(draft_id, workspace))}
 
 
 @app.post("/api/drafts/{draft_id}/reject")
-def reject_draft(draft_id: int, payload: DraftReject | None = None):
-    draft = _get_draft_or_404(draft_id)
+def reject_draft(draft_id: int, payload: DraftReject | None = None,
+                 workspace: str = Depends(current_workspace)):
+    draft = _get_draft_or_404(draft_id, workspace)
     if draft["status"] != "pending":
         raise HTTPException(
             status_code=409,
@@ -368,21 +527,22 @@ def reject_draft(draft_id: int, payload: DraftReject | None = None):
     with connect() as conn:
         conn.execute(
             "UPDATE drafts SET status='rejected', decided_by=?, "
-            "decision_note=? WHERE id = ?",
-            (decided_by, reason, draft_id),
+            "decision_note=? WHERE id = ? AND workspace_id=?",
+            (decided_by, reason, draft_id, workspace),
         )
-    _record_decision(draft_id, "rejected", reason, decided_by)
-    return {"draft": _draft_row(_get_draft_or_404(draft_id))}
+    _record_decision(draft_id, "rejected", reason, decided_by, workspace)
+    return {"draft": _draft_row(_get_draft_or_404(draft_id, workspace))}
 
 
 # ---------------------------------------------------------------- knowledge base
 @app.get("/api/kb")
-def list_kb():
-    return {"docs": kb.list_docs()}
+def list_kb(workspace: str = Depends(current_workspace)):
+    return {"docs": kb.list_docs(workspace)}
 
 
 @app.post("/api/kb/upload")
-async def upload_kb(file: UploadFile = File(...)):
+async def upload_kb(file: UploadFile = File(...),
+                    workspace: str = Depends(current_workspace)):
     name = Path(file.filename or "").name
     if not name.lower().endswith((".txt", ".md")):
         raise HTTPException(
@@ -395,20 +555,21 @@ async def upload_kb(file: UploadFile = File(...)):
     if not text.strip():
         raise HTTPException(status_code=400, detail="file is empty")
     # Persist the file so /api/kb/reindex can rebuild from it later.
-    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
-    (settings.uploads_dir / name).write_text(text, encoding="utf-8")
-    doc = kb.add_doc(name, text, source=name)
+    folder = settings.uploads_dir / workspace
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / name).write_text(text, encoding="utf-8")
+    doc = kb.add_doc(name, text, source=name, workspace=workspace)
     return {"id": doc["id"], "name": doc["name"], "chunks": doc["chunks"]}
 
 
 @app.post("/api/kb/reindex")
-def reindex_kb():
-    docs = kb.reindex()
+def reindex_kb(workspace: str = Depends(current_workspace)):
+    docs = kb.reindex(workspace)
     return {"docs": docs}
 
 
 @app.delete("/api/kb/{doc_id}")
-def delete_kb_doc(doc_id: int):
-    if not kb.delete_doc(doc_id):
+def delete_kb_doc(doc_id: int, workspace: str = Depends(current_workspace)):
+    if not kb.delete_doc(doc_id, workspace):
         raise HTTPException(status_code=404, detail="kb doc not found")
     return {"deleted": doc_id}

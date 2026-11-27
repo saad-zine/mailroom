@@ -37,15 +37,13 @@ INITIAL_STATE = {
 }
 
 
-def create_run() -> dict:
+def create_run(workspace: str = "local") -> dict:
     thread_id = f"run-{uuid.uuid4().hex[:12]}"
     with connect() as conn:
-        # RETURNING id (not cursor.lastrowid) — works on SQLite and
-        # Postgres alike.
         row = conn.execute(
-            "INSERT INTO runs(thread_id, status, started_at) "
-            "VALUES (?, 'running', ?) RETURNING id",
-            (thread_id, utcnow_iso()),
+            "INSERT INTO runs(workspace_id, thread_id, status, started_at) "
+            "VALUES (?, ?, 'running', ?) RETURNING id",
+            (workspace, thread_id, utcnow_iso()),
         ).fetchone()
         return {"id": row[0], "thread_id": thread_id}
 
@@ -68,15 +66,24 @@ def _finish_run(run_id: int, status: str) -> None:
         )
 
 
-def _get_unanswered_emails() -> list[dict]:
+def _get_unanswered_emails(workspace: str = "local", email_ids: list[int] | None = None) -> list[dict]:
     with connect() as conn:
-        rows = conn.execute(
-            "SELECT * FROM emails WHERE status = 'new' ORDER BY received_at"
-        ).fetchall()
+        if email_ids:
+            placeholders = ",".join("?" for _ in email_ids)
+            rows = conn.execute(
+                f"SELECT * FROM emails WHERE workspace_id=? AND status='new' "
+                f"AND id IN ({placeholders}) ORDER BY received_at",
+                [workspace, *email_ids],
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM emails WHERE workspace_id=? AND status='new' ORDER BY received_at",
+                (workspace,),
+            ).fetchall()
     return [dict(r) for r in rows]
 
 
-def _sync_gmail_inbox() -> int:
+def _sync_gmail_inbox(workspace: str = "local") -> int:
     """Live Gmail: pull unanswered threads into the DB. No-op when Gmail
     is not connected. Returns number of new emails inserted."""
     if not gmail_connected():
@@ -92,7 +99,8 @@ def _sync_gmail_inbox() -> int:
     with connect() as conn:
         for e in fetched:
             exists = conn.execute(
-                "SELECT id FROM emails WHERE thread_id = ?", (e.get("threadId"),)
+                "SELECT id FROM emails WHERE workspace_id=? AND thread_id = ?",
+                (workspace, e.get("threadId")),
             ).fetchone()
             if exists:
                 continue
@@ -101,10 +109,11 @@ def _sync_gmail_inbox() -> int:
             # each email when it processes it. Never use the mock
             # categorizer on real mail.
             conn.execute(
-                """INSERT INTO emails(thread_id, sender, subject, snippet,
+                """INSERT INTO emails(workspace_id, thread_id, sender, subject, snippet,
                        body, category, status, received_at, source)
-                   VALUES (?, ?, ?, ?, ?, ?, 'new', ?, 'live')""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 'new', ?, 'live')""",
                 (
+                    workspace,
                     e.get("threadId"), e.get("sender"), e.get("subject"),
                     " ".join(body.split())[:140], body,
                     "",
@@ -134,7 +143,7 @@ def _proofreader_feedback(writer_messages: list) -> str:
     return ""
 
 
-def _process_one_email(run_id: int, seq: int, email: dict) -> int:
+def _process_one_email(run_id: int, seq: int, email: dict, workspace: str = "local") -> int:
     """Run the 9-node graph over a single email; persist draft or skip."""
     mode = settings.mode
     email_dict = {
@@ -165,7 +174,7 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
                 emails=[email_dict],
                 fallback=mock_engine if is_mock else None,
                 retriever=(mock_engine.mock_rag if is_mock
-                           else kb.retrieve),
+                           else lambda q, k=3: kb.retrieve(q, k, workspace)),
                 checkpointer=checkpointer)
             config = {
                 "configurable": {
@@ -234,8 +243,8 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
     if category == "unrelated" or not draft_body:
         with connect() as conn:
             conn.execute(
-                "UPDATE emails SET category = ?, status = 'skipped' WHERE id = ?",
-                (category, email["id"]),
+                "UPDATE emails SET category = ?, status = 'skipped' WHERE id = ? AND workspace_id=?",
+                (category, email["id"], workspace),
             )
         return _record_step(run_id, seq, "skip_unrelated_email",
                             f"Email #{email['id']} skipped ({category})")
@@ -258,15 +267,16 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
 
     with connect() as conn:
         conn.execute(
-            "UPDATE emails SET category = ?, status = 'drafted' WHERE id = ?",
-            (category, email["id"]),
+            "UPDATE emails SET category = ?, status = 'drafted' "
+            "WHERE id = ? AND workspace_id=?",
+            (category, email["id"], workspace),
         )
         conn.execute(
-            """INSERT INTO drafts(email_id, sender, subject, category, body,
+            """INSERT INTO drafts(workspace_id, email_id, sender, subject, category, body,
                    proofreader_feedback, rag_context_json, status, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)""",
-            (email["id"], email.get("sender"), email.get("subject"), category,
-             draft_body, feedback, to_json(
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)""",
+            (workspace, email["id"], email.get("sender"), email.get("subject"),
+             category, draft_body, feedback, to_json(
                  [{**c, "source": source} for c in rag_context]),
              utcnow_iso()),
         )
@@ -283,7 +293,7 @@ def _process_one_email(run_id: int, seq: int, email: dict) -> int:
 MAX_EMAILS_PER_RUN = 10
 
 
-def run_workflow(run_id: int) -> None:
+def run_workflow(run_id: int, workspace: str = "local", email_ids: list[int] | None = None) -> None:
     """Run the workflow over the unanswered inbox, synchronously.
 
     Called inside the request (POST /api/runs or the Vercel cron), so
@@ -301,12 +311,12 @@ def run_workflow(run_id: int) -> None:
                 status="failed")
             _finish_run(run_id, "failed")
             return
-        if settings.mode == "live":
-            synced = _sync_gmail_inbox()
+        if settings.mode == "live" and not settings.auth_enabled:
+            synced = _sync_gmail_inbox(workspace)
             if synced:
                 seq = _record_step(run_id, seq, "load_inbox_emails",
                                    f"Synced {synced} new email(s) from Gmail")
-        emails = _get_unanswered_emails()
+        emails = _get_unanswered_emails(workspace, email_ids)
         if not emails:
             seq = _record_step(run_id, seq, "is_email_inbox_empty",
                                "Inbox empty — nothing to process")
@@ -320,7 +330,7 @@ def run_workflow(run_id: int) -> None:
                 f"{len(emails)} unanswered — processing {MAX_EMAILS_PER_RUN} "
                 "this run, the rest on the next run")
         for email in batch:
-            seq = _process_one_email(run_id, seq, email)
+            seq = _process_one_email(run_id, seq, email, workspace)
         _finish_run(run_id, "completed")
     except Exception:
         traceback.print_exc()

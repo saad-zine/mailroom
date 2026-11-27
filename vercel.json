@@ -1,1 +1,15 @@
-{"$schema":"https://openapi.vercel.sh/vercel.json","buildCommand":"cd frontend && npm install && npm run build","crons":[{"path":"/api/cron/poll","schedule":"0 9 * * *"}],"functions":{"api/index.py":{"maxDuration":300}},"outputDirectory":"frontend/dist","rewrites":[{"destination":"/api/index","source":"/api/:path*"}]}
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "crons": [
+    { "path": "/api/cron/poll", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/renew-watches", "schedule": "30 9 * * *" }
+  ],
+  "functions": { "api/index.py": { "maxDuration": 300 } },
+  "outputDirectory": "frontend/dist",
+  "rewrites": [
+    { "destination": "/api/index", "source": "/api/:path*" },
+    { "destination": "/index.html", "source": "/app" },
+    { "destination": "/index.html", "source": "/app/:path*" }
+  ]
+}

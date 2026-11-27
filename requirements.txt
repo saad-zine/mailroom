@@ -17,6 +17,9 @@ httpx>=0.27
 # Postgres (Supabase) driver — binary wheels, no compiler needed on
 # Vercel. Only used when DATABASE_URL is set; SQLite is the fallback.
 psycopg[binary]>=3.2
+# Supabase JWT verification and encrypted Gmail refresh tokens.
+PyJWT[crypto]>=2.8
+cryptography>=42
 # NOT installed on Vercel (kept in backend/requirements.txt for local
 # dev only): langchain_chroma, chromadb, langchain_google_genai,
 # langchain_community, google-api-python-client, google-auth-oauthlib,
