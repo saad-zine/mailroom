@@ -378,11 +378,16 @@ export default function Landing() {
 
       <section className="lp-close">
         <div className="lp-close-inner" data-reveal>
-          <BotMark size={44} fg="#ffffff" bg="#050505" />
           <h2>
             <Word i={0}>Open</Word> <Word i={1}>the</Word>{' '}
             <span className="lp-word lp-bot-inline" style={{ '--i': 2 } as CSSProperties}>
-              <BotMark size="100%" bg="#050505" animated gradient />
+              <BotMark
+                size="100%"
+                bg="#050505"
+                animated
+                gradient
+                gradientColors={['#EA4045', '#F6C945', '#3C82F6', '#FFFFFF']}
+              />
             </span>{' '}
             <Word i={3}>mailroom.</Word>
           </h2>

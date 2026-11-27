@@ -844,6 +844,10 @@
   animation: grok-grad-c 10s linear infinite;
 }
 
+.grok-grad-d {
+  animation: grok-grad-d 10s linear infinite;
+}
+
 @keyframes grok-grad-a {
   0%, 100% { stop-color: #f19d38; }
   20% { stop-color: #ea4045; }
@@ -866,6 +870,14 @@
   40% { stop-color: #f19d38; }
   60% { stop-color: #885cf5; }
   80% { stop-color: #3c82f6; }
+}
+
+@keyframes grok-grad-d {
+  0%, 100% { stop-color: #54b9a6; }
+  20% { stop-color: #f19d38; }
+  40% { stop-color: #3c82f6; }
+  60% { stop-color: #ea4045; }
+  80% { stop-color: #54b9a6; }
 }
 
 /* ---------------------------------------------------------------- responsive */

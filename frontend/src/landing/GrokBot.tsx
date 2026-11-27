@@ -27,6 +27,8 @@ type BotMarkProps = {
   animated?: boolean;
   /** Fill the head with a slow, colour-changing gradient. */
   gradient?: boolean;
+  /** Palette for that gradient. */
+  gradientColors?: string[];
   title?: string;
   className?: string;
   style?: CSSProperties;
@@ -38,19 +40,22 @@ export function BotMark({
   bg = '#0a0a0a',
   animated = false,
   gradient = false,
+  gradientColors = ['#F19D38', '#EA4045', '#885CF5', '#3C82F6'],
   title,
   className,
   style,
 }: BotMarkProps) {
   const eyeLeft = useRef<SVGGElement>(null);
   const eyeRight = useRef<SVGGElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const gradientId = `bot-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   useEffect(() => {
     if (!animated) return;
     const a = eyeLeft.current;
     const b = eyeRight.current;
-    if (!a || !b) return;
+    const svg = svgRef.current;
+    if (!a || !b || !svg) return;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
@@ -58,10 +63,9 @@ export function BotMark({
     let py = 0;
     let hasPointer = false;
     const onMove = (event: PointerEvent) => {
-      const rect = (a.ownerSVGElement as SVGSVGElement | null)?.getBoundingClientRect();
-      if (!rect) return;
-      px = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-      py = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+      // Track the cursor across the whole page, not just this little mark.
+      px = (event.clientX / window.innerWidth - 0.5) * 2;
+      py = (event.clientY / window.innerHeight - 0.5) * 2;
       hasPointer = true;
     };
     window.addEventListener('pointermove', onMove, { passive: true });
@@ -105,11 +109,13 @@ export function BotMark({
       const leftScale = 1 + 0.03 * breathe;
       const rightScale = 1 - 0.04 * breathe + 0.18 * pop;
 
+      // Turn the whole shell toward the cursor, then lead with the eyes.
       // Values are in the 92-space the eye paths use; the parent group
       // scales them up to the head.
-      const dx = gx * 2.1;
-      const dy = gy * 1.7;
-      const tilt = gx * 2.2;
+      svg.style.transform = `perspective(420px) rotateY(${gx * 16}deg) rotateX(${-gy * 12}deg)`;
+      const dx = gx * 2.6;
+      const dy = gy * 2.1;
+      const tilt = gx * 3;
 
       a.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${leftScale}, ${open})`;
       b.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${rightScale}, ${open})`;
@@ -126,11 +132,12 @@ export function BotMark({
 
   return (
     <svg
+      ref={svgRef}
       viewBox="0 0 100 100"
       width={size}
       height={size}
       className={className}
-      style={style}
+      style={{ ...style, transformOrigin: 'center', willChange: 'transform' }}
       role={title ? 'img' : undefined}
       aria-hidden={title ? undefined : true}
       focusable="false"
@@ -139,9 +146,14 @@ export function BotMark({
       {gradient ? (
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#F19D38" className="grok-grad-a" />
-            <stop offset="50%" stopColor="#885CF5" className="grok-grad-b" />
-            <stop offset="100%" stopColor="#3C82F6" className="grok-grad-c" />
+            {gradientColors.map((color, index) => (
+              <stop
+                key={`${color}-${index}`}
+                offset={`${(index / (gradientColors.length - 1)) * 100}%`}
+                stopColor={color}
+                className={`grok-grad-${'abcd'[index] ?? 'a'}`}
+              />
+            ))}
           </linearGradient>
         </defs>
       ) : null}

@@ -10,303 +10,232 @@ import {
 
 const C = {
   bg: '#0a0a0a',
-  card: '#1a1a1a',
-  card2: '#202020',
-  line: 'rgba(255,255,255,0.1)',
   ink: '#ffffff',
-  muted: 'rgba(255,255,255,0.6)',
-  faint: 'rgba(255,255,255,0.4)',
+  muted: 'rgba(255,255,255,0.55)',
+  line: 'rgba(255,255,255,0.14)',
 };
+
+const PALETTE = ['#EA4045', '#F6C945', '#3C82F6', '#5BC67A', '#885CF5', '#FFFFFF'];
+
+const STEPS = [
+  { line: 'New mail arrives.', note: 'INCOMING · 09:41' },
+  { line: 'Mailroom reads it.', note: 'READING THE THREAD' },
+  { line: 'A reply is drafted.', note: 'IN YOUR VOICE' },
+  { line: 'Sources shown.', note: 'EVERY CLAIM CITED' },
+  { line: 'You approve.', note: 'ONE HUMAN DECISION' },
+  { line: 'Nothing sends itself.', note: 'DRAFT SAVED TO GMAIL' },
+];
 
 const fontCss = `
 @font-face{font-family:Inter;src:url('${staticFile('fonts/inter-normal-300-800.woff2')}') format('woff2');font-weight:300 800}
 @font-face{font-family:'Geist Mono';src:url('${staticFile('fonts/geist-mono-normal-300-600.woff2')}') format('woff2');font-weight:300 600}
 `;
 
-const fade = (frame: number, start: number, end: number, edge = 14) =>
-  interpolate(
-    frame,
-    [start, start + edge, end - edge, end],
-    [0, 1, 1, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-  );
+const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
-const slide = (frame: number, start: number, end: number) =>
-  interpolate(frame, [start, start + 18, end - 12, end], [16, 0, 0, -12], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-
-/** Small version of the hero bot: a hue-cycling head with two cut-out eyes. */
-const Bot: React.FC<{ size: number }> = ({ size }) => {
-  const frame = useCurrentFrame();
-  const hue = (frame * 1.6) % 360;
-  const a = `hsl(${hue} 82% 62%)`;
-  const b = `hsl(${(hue + 70) % 360} 82% 62%)`;
-  const id = `g${Math.round(hue)}`;
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100">
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={a} />
-          <stop offset="100%" stopColor={b} />
-        </linearGradient>
-      </defs>
-      <circle cx="50" cy="50" r="46" fill={`url(#${id})`} />
-      <ellipse cx="34" cy="44" rx="4.2" ry="11" fill={C.bg} transform="rotate(-9 34 44)" />
-      <ellipse cx="59" cy="41" rx="4.2" ry="11" fill={C.bg} transform="rotate(-9 59 41)" />
-    </svg>
-  );
-};
-
-const Kicker: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div
-    style={{
-      fontFamily: "'Geist Mono', monospace",
-      fontSize: 13,
-      letterSpacing: 2,
-      textTransform: 'uppercase',
-      color: C.faint,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-    }}
-  >
-    <span style={{ width: 6, height: 6, background: C.ink, borderRadius: 1 }} />
-    {children}
-  </div>
-);
-
-const MessageCard: React.FC<{
-  title: string;
-  meta: string;
-  tag: string;
-  tagColor: string;
-  frame: number;
-  start: number;
-  end: number;
-  progress?: number;
-}> = ({ title, meta, tag, tagColor, frame, start, end, progress }) => (
-  <div
-    style={{
-      position: 'absolute',
-      inset: 18,
-      background: C.card2,
-      border: `1px solid ${C.line}`,
-      borderRadius: 18,
-      padding: 24,
-      opacity: fade(frame, start, end),
-      transform: `translateY(${slide(frame, start, end)}px)`,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-    }}
-  >
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 12, color: C.faint }}>
-        {meta}
-      </span>
-      <span
-        style={{
-          fontSize: 12,
-          color: tagColor,
-          background: `${tagColor}22`,
-          borderRadius: 999,
-          padding: '4px 10px',
-        }}
-      >
-        {tag}
-      </span>
-    </div>
-    <div style={{ fontSize: 30, fontWeight: 500, letterSpacing: -0.6, lineHeight: 1.15 }}>
-      {title}
-    </div>
-    {progress !== undefined ? (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ height: 4, background: C.line, borderRadius: 4, overflow: 'hidden' }}>
-          <div
-            style={{
-              height: '100%',
-              width: `${progress * 100}%`,
-              background: C.ink,
-              borderRadius: 4,
-            }}
-          />
-        </div>
-        <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 12, color: C.faint }}>
-          Reading thread · matching sources · writing in your voice
-        </span>
-      </div>
-    ) : (
-      <div style={{ display: 'flex', gap: 8 }}>
-        {['KB / rollout.md', 'KB / pricing.md', 'Thread / 4 msgs'].map((s) => (
-          <span
-            key={s}
-            style={{
-              fontSize: 12,
-              color: C.muted,
-              border: `1px solid ${C.line}`,
-              borderRadius: 999,
-              padding: '5px 10px',
-            }}
-          >
-            {s}
-          </span>
-        ))}
-      </div>
-    )}
-  </div>
+/** Tiny bot head, used as a accent in the last beat. */
+const BotDot: React.FC<{ color: string }> = ({ color }) => (
+  <svg width="30" height="30" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="46" fill={color} />
+    <ellipse cx="35" cy="44" rx="5" ry="11" fill={C.bg} transform="rotate(-10 35 44)" />
+    <ellipse cx="60" cy="41" rx="5" ry="11" fill={C.bg} transform="rotate(-10 60 41)" />
+  </svg>
 );
 
 export const MailroomDemo: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const enter = spring({ frame, fps, config: { damping: 200 } });
-  const progress = interpolate(frame, [120, 205], [0.06, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  const step = Math.min(STEPS.length - 1, Math.floor(frame / 60));
+  const local = frame - step * 60;
+  const stepOpacity = interpolate(local, [0, 6, 54, 60], [0, 1, 1, 0], clamp);
+  const stepY = interpolate(local, [0, 10, 52, 60], [22, 0, 0, -14], clamp);
+  const stepBlur = interpolate(local, [0, 7, 54, 60], [10, 0, 0, 8], clamp);
+  const draw = interpolate(local, [4, 34], [0, 1], clamp);
+  const dotY = interpolate(frame, [0, 58], [-70, 104], clamp);
+  const checkDraw = interpolate(frame, [240, 280], [0, 1], clamp);
+  const pulse = 1 + Math.sin(frame / 6) * 0.012;
 
   return (
     <AbsoluteFill
       style={{
-        background: C.bg,
+        background: `radial-gradient(circle at 50% 42%, #161616 0%, ${C.bg} 62%)`,
         color: C.ink,
         fontFamily: 'Inter, sans-serif',
-        padding: 64,
-        flexDirection: 'row',
-        gap: 64,
-        opacity: interpolate(frame, [350, 360], [1, 0], {
-          extrapolateLeft: 'clamp',
-          extrapolateRight: 'clamp',
-        }),
+        opacity: interpolate(frame, [352, 360], [1, 0], clamp),
       }}
     >
       <style>{fontCss}</style>
 
-      {/* left: the promise */}
+      {/* frame */}
       <div
         style={{
-          width: 470,
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          gap: 22,
-          opacity: enter,
-          transform: `translateY(${(1 - enter) * 24}px)`,
+          position: 'absolute',
+          inset: 46,
+          border: `1px solid ${C.line}`,
+          borderRadius: 20,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 78,
+          left: 88,
+          fontFamily: "'Geist Mono', monospace",
+          fontSize: 13,
+          letterSpacing: 2.4,
+          color: C.muted,
         }}
       >
-        <Kicker>Mailroom / live demo</Kicker>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ fontSize: 68, fontWeight: 500, letterSpacing: -2.5, lineHeight: 1 }}>
-            Your inbox,
-          </div>
-          <Bot size={62} />
-        </div>
-        <div style={{ fontSize: 68, fontWeight: 500, letterSpacing: -2.5, lineHeight: 1 }}>
-          handled.
-        </div>
-        <div style={{ fontSize: 21, lineHeight: 1.5, color: C.muted, maxWidth: 430 }}>
-          Mailroom reads each new email, drafts the reply in your voice with the
-          sources shown, and waits for your approval.
-        </div>
-        <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-          {['Read & draft only', 'Source-backed', 'You approve'].map((t) => (
-            <span
-              key={t}
-              style={{
-                fontFamily: "'Geist Mono', monospace",
-                fontSize: 12,
-                color: C.muted,
-                border: `1px solid ${C.line}`,
-                borderRadius: 999,
-                padding: '7px 12px',
-              }}
-            >
-              {t}
-            </span>
-          ))}
-        </div>
+        Mailroom / the process
       </div>
-
-      {/* right: the workspace */}
       <div
         style={{
-          flex: 1,
-          background: C.card,
-          border: `1px solid ${C.line}`,
-          borderRadius: 24,
-          overflow: 'hidden',
+          position: 'absolute',
+          top: 78,
+          right: 88,
+          fontFamily: "'Geist Mono', monospace",
+          fontSize: 13,
+          letterSpacing: 2.4,
+          color: C.muted,
+        }}
+      >
+        {String(step + 1).padStart(2, '0')} / 06
+      </div>
+
+      {/* icon */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 132,
+          left: 0,
+          width: '100%',
           display: 'flex',
-          flexDirection: 'column',
+          justifyContent: 'center',
           opacity: enter,
+          transform: `scale(${pulse})`,
+        }}
+      >
+        <svg width="280" height="210" viewBox="0 0 280 210">
+          {/* the letter */}
+          <circle cx={140} cy={dotY} r="7" fill={PALETTE[step]} opacity={step === 0 ? 1 : 0} />
+          <rect
+            x="18"
+            y="52"
+            width="244"
+            height="132"
+            rx="16"
+            fill="none"
+            stroke={C.ink}
+            strokeWidth="3"
+            opacity="0.9"
+          />
+          {/* flap, drawn on with a dash */}
+          <path
+            d="M18 68 L140 138 L262 68"
+            fill="none"
+            stroke={C.ink}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray="270"
+            strokeDashoffset={270 * (1 - draw)}
+            opacity="0.9"
+          />
+          {/* approval check */}
+          <path
+            d="M112 118 L132 136 L170 100"
+            fill="none"
+            stroke="#5BC67A"
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="90"
+            strokeDashoffset={90 * (1 - checkDraw)}
+          />
+        </svg>
+      </div>
+
+      {/* changing copy */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 372,
+          left: 0,
+          width: '100%',
+          textAlign: 'center',
+          padding: '0 80px',
         }}
       >
         <div
+          key={step}
           style={{
-            height: 56,
-            borderBottom: `1px solid ${C.line}`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '0 20px',
+            fontSize: 62,
+            fontWeight: 500,
+            letterSpacing: -2.4,
+            lineHeight: 1.05,
+            opacity: stepOpacity,
+            transform: `translateY(${stepY}px)`,
+            filter: `blur(${stepBlur}px)`,
           }}
         >
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#EA4045' }} />
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#F19D38' }} />
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#5BC67A' }} />
-          <span
-            style={{
-              marginLeft: 14,
-              fontFamily: "'Geist Mono', monospace",
-              fontSize: 12,
-              color: C.faint,
-            }}
-          >
-            Mailroom / Approval queue
-          </span>
+          {STEPS[step].line}
         </div>
+        <div
+          key={`${step}-note`}
+          style={{
+            marginTop: 18,
+            fontFamily: "'Geist Mono', monospace",
+            fontSize: 14,
+            letterSpacing: 2.6,
+            textTransform: 'uppercase',
+            color: C.muted,
+            opacity: stepOpacity,
+          }}
+        >
+          {STEPS[step].note}
+        </div>
+      </div>
 
-        <div style={{ flex: 1, padding: 18, position: 'relative' }}>
-          <MessageCard
-            title="Re: Q3 rollout — can you send the revised dates?"
-            meta="INCOMING · 09:41"
-            tag="New"
-            tagColor="#3C82F6"
-            frame={frame}
-            start={24}
-            end={130}
+      {/* progress */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 96,
+          left: 88,
+          right: 88,
+          display: 'flex',
+          gap: 10,
+        }}
+      >
+        {STEPS.map((s, index) => (
+          <div
+            key={s.line}
+            style={{
+              height: 3,
+              flex: 1,
+              background: index <= step ? PALETTE[index] : C.line,
+              opacity: index <= step ? 1 : 0.7,
+            }}
           />
-          <MessageCard
-            title="Drafting a reply in your voice…"
-            meta="MAILROOM · WORKING"
-            tag="Drafting"
-            tagColor="#F19D38"
-            frame={frame}
-            start={116}
-            end={214}
-            progress={progress}
-          />
-          <MessageCard
-            title="Here are the revised dates, with the source docs attached."
-            meta="DRAFT · READY FOR REVIEW"
-            tag="3 sources"
-            tagColor="#885CF5"
-            frame={frame}
-            start={200}
-            end={296}
-          />
-          <MessageCard
-            title="Draft saved to Gmail. Nothing was sent."
-            meta="APPROVED · 09:43"
-            tag="Your call"
-            tagColor="#5BC67A"
-            frame={frame}
-            start={282}
-            end={360}
-          />
-        </div>
+        ))}
+      </div>
+
+      {/* bot accents on the final beat */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 126,
+          left: 0,
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 10,
+          opacity: interpolate(frame, [300, 322], [0, 1], clamp),
+        }}
+      >
+        {PALETTE.slice(0, 3).map((color) => (
+          <BotDot key={color} color={color} />
+        ))}
       </div>
     </AbsoluteFill>
   );
