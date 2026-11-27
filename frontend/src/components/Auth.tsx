@@ -40,6 +40,13 @@ export function Auth({ onSignedIn }: { onSignedIn: () => void }) {
   return (
     <div className="flex min-h-full items-center justify-center bg-canvas px-4 py-12">
       <div className="w-full max-w-sm space-y-5">
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 font-mono text-[9.5px] tracking-[0.22em] text-faint uppercase transition-colors hover:text-ink"
+        >
+          <span className="h-2 w-2 bg-teal" aria-hidden="true" />
+          Mailroom
+        </a>
         <PageHeader
           title={mode === 'signin' ? 'Sign in to Mailroom' : 'Create an account'}
           description="Your Gmail connection and drafts stay private to your workspace."

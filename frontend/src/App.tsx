@@ -97,8 +97,7 @@ export default function App() {
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut();
     storeToken(null);
-    setSignedIn(false);
-    setView('dashboard');
+    window.location.assign('/');
   };
 
   if (!authChecked) return <div className="h-full bg-canvas" />;
