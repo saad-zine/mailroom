@@ -9,16 +9,16 @@ import * as THREE from 'three';
  * No extra page layout — just the component.
  */
 
-// --- Constants: tiny, wide-eyed (Grok-style) ---
-const HEAD_SIZE = 0.85;        // much smaller for tab
-const HEAD_RADIUS = 0.45;      // rounder
+// --- Constants: small, cute, balanced ---
+const HEAD_SIZE = 1.1;         // small but readable
+const HEAD_RADIUS = 0.5;       // nicely rounded
 const HEAD_SMOOTHNESS = 12;    // very smooth
 
-const EYE_RADIUS = 0.11;       // wider radius = wide eyes
-const EYE_HEIGHT = 0.06;       // very short = horizontal ovals
-const EYE_Z = 0.45;
-const EYE_Y = 0.02;
-const EYE_X = 0.26;            // wider spacing
+const EYE_RADIUS = 0.075;      // moderate width
+const EYE_HEIGHT = 0.12;       // slightly vertical oval (cute)
+const EYE_Z = 0.55;
+const EYE_Y = 0.05;
+const EYE_X = 0.24;            // natural spacing
 
 const MAX_ROT_Y = 0.35;        // slightly less rotation range
 const MAX_ROT_X = 0.2;
@@ -70,7 +70,7 @@ function MascotScene() {
 
     // Gentle vertical bob
     const time = clock.getElapsedTime();
-    headRef.current.position.y = Math.sin(time * 2) * 0.03;
+    headRef.current.position.y = Math.sin(time * 2) * 0.04;
 
     // Eyes shift slightly with gaze
     const shiftX = mouse.x * EYE_SHIFT_FACTOR;
@@ -132,7 +132,7 @@ export function MascotBot() {
     >
       <Canvas
         gl={{ alpha: true, antialias: true, preserveDrawingBuffer: false }}
-        camera={{ position: [0, 0, 3.2], fov: 28 }}
+        camera={{ position: [0, 0, 4], fov: 30 }}
         style={{ width: '100%', height: '100%', display: 'block' }}
       >
         <Environment preset="city" />
@@ -141,10 +141,10 @@ export function MascotBot() {
         <ambientLight intensity={0.6} />
 
         <ContactShadows
-          position={[0, -0.6, 0]}
-          opacity={0.2}
-          scale={1.8}
-          blur={1.5}
+          position={[0, -0.75, 0]}
+          opacity={0.22}
+          scale={2.2}
+          blur={1.8}
         />
 
         <MascotScene />
