@@ -9,16 +9,16 @@ import * as THREE from 'three';
  * No extra page layout — just the component.
  */
 
-// --- Constants: smaller, more spherical ---
-const HEAD_SIZE = 1.35;        // overall scale (was ~2.1)
-const HEAD_RADIUS = 0.55;      // rounder corners
-const HEAD_SMOOTHNESS = 10;    // smoother
+// --- Constants: tiny, wide-eyed (Grok-style) ---
+const HEAD_SIZE = 0.85;        // much smaller for tab
+const HEAD_RADIUS = 0.45;      // rounder
+const HEAD_SMOOTHNESS = 12;    // very smooth
 
-const EYE_RADIUS = 0.065;
-const EYE_HEIGHT = 0.18;       // shorter, rounder eyes
-const EYE_Z = 0.62;
-const EYE_Y = 0.08;
-const EYE_X = 0.28;
+const EYE_RADIUS = 0.11;       // wider radius = wide eyes
+const EYE_HEIGHT = 0.06;       // very short = horizontal ovals
+const EYE_Z = 0.45;
+const EYE_Y = 0.02;
+const EYE_X = 0.26;            // wider spacing
 
 const MAX_ROT_Y = 0.35;        // slightly less rotation range
 const MAX_ROT_X = 0.2;
@@ -70,7 +70,7 @@ function MascotScene() {
 
     // Gentle vertical bob
     const time = clock.getElapsedTime();
-    headRef.current.position.y = Math.sin(time * 2) * 0.05;
+    headRef.current.position.y = Math.sin(time * 2) * 0.03;
 
     // Eyes shift slightly with gaze
     const shiftX = mouse.x * EYE_SHIFT_FACTOR;
@@ -132,19 +132,19 @@ export function MascotBot() {
     >
       <Canvas
         gl={{ alpha: true, antialias: true, preserveDrawingBuffer: false }}
-        camera={{ position: [0, 0, 4.5], fov: 30 }}
+        camera={{ position: [0, 0, 3.2], fov: 28 }}
         style={{ width: '100%', height: '100%', display: 'block' }}
       >
         <Environment preset="city" />
-        <directionalLight position={[2, 3, 4]} intensity={1.1} />
-        <directionalLight position={[-1.5, 2, 3]} intensity={0.4} />
-        <ambientLight intensity={0.5} />
+        <directionalLight position={[1.5, 2, 3]} intensity={1.2} />
+        <directionalLight position={[-1, 1.5, 2.5]} intensity={0.5} />
+        <ambientLight intensity={0.6} />
 
         <ContactShadows
-          position={[0, -0.9, 0]}
-          opacity={0.25}
-          scale={2.5}
-          blur={2}
+          position={[0, -0.6, 0]}
+          opacity={0.2}
+          scale={1.8}
+          blur={1.5}
         />
 
         <MascotScene />
