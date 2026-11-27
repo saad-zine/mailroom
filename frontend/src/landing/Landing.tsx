@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { LetterScene } from './LetterScene';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { MascotBot } from './MascotBot.tsx';
 import './landing.css';
 
 const NAV = [
@@ -66,7 +66,6 @@ function Arrow() {
 
 export default function Landing() {
   const [solid, setSolid] = useState(false);
-  const [dragged, setDragged] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 40);
@@ -95,8 +94,6 @@ export default function Landing() {
     nodes.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
   }, []);
-
-  const firstDrag = useCallback(() => setDragged(true), []);
 
   return (
     <div className="lp">
@@ -139,7 +136,7 @@ export default function Landing() {
             </h1>
           </div>
 
-          <LetterScene className="lp-canvas" onFirstDrag={firstDrag} />
+          <MascotBot />
 
           <div className="lp-meta">
             <div className="lp-meta-item">
@@ -156,10 +153,6 @@ export default function Landing() {
               </span>
               <small>yours alone</small>
             </div>
-          </div>
-
-          <div className={`lp-drag-hint${dragged ? ' is-used' : ''}`}>
-            360° — drag to rotate
           </div>
 
           <p className="lp-blurb">
