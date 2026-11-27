@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Easing,
   interpolate,
   spring,
   staticFile,
@@ -8,22 +9,14 @@ import {
   useVideoConfig,
 } from 'remotion';
 
-const C = {
-  bg: '#0a0a0a',
-  ink: '#ffffff',
-  muted: 'rgba(255,255,255,0.55)',
-  line: 'rgba(255,255,255,0.14)',
-};
+const INK = '#0a0a0a';
+const PAPER = '#ffffff';
+const PALETTE = ['#FFFFFF', '#EA4045', '#3C82F6', '#F6C945'];
 
-const PALETTE = ['#EA4045', '#F6C945', '#3C82F6', '#5BC67A', '#885CF5', '#FFFFFF'];
-
-const STEPS = [
-  { line: 'New mail arrives.', note: 'INCOMING · 09:41' },
-  { line: 'Mailroom reads it.', note: 'READING THE THREAD' },
-  { line: 'A reply is drafted.', note: 'IN YOUR VOICE' },
-  { line: 'Sources shown.', note: 'EVERY CLAIM CITED' },
-  { line: 'You approve.', note: 'ONE HUMAN DECISION' },
-  { line: 'Nothing sends itself.', note: 'DRAFT SAVED TO GMAIL' },
+const PHRASES = [
+  'New mail arrives.',
+  'Mailroom drafts in your voice.',
+  'Sources shown. You approve.',
 ];
 
 const fontCss = `
@@ -33,208 +26,228 @@ const fontCss = `
 
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
-/** Tiny bot head, used as a accent in the last beat. */
-const BotDot: React.FC<{ color: string }> = ({ color }) => (
-  <svg width="30" height="30" viewBox="0 0 100 100">
-    <circle cx="50" cy="50" r="46" fill={color} />
-    <ellipse cx="35" cy="44" rx="5" ry="11" fill={C.bg} transform="rotate(-10 35 44)" />
-    <ellipse cx="60" cy="41" rx="5" ry="11" fill={C.bg} transform="rotate(-10 60 41)" />
-  </svg>
+/** Words land one after another, then the whole line settles. */
+const WordByWord: React.FC<{ text: string; start: number; frame: number }> = ({
+  text,
+  start,
+  frame,
+}) => (
+  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0 0.28em' }}>
+    {text.split(' ').map((word, index) => {
+      const t = frame - start - index * 5;
+      const opacity = interpolate(t, [0, 7], [0, 1], clamp);
+      const y = interpolate(t, [0, 9], [22, 0], {
+        ...clamp,
+        easing: Easing.out(Easing.cubic),
+      });
+      const blur = interpolate(t, [0, 8], [9, 0], clamp);
+      return (
+        <span
+          key={`${word}-${index}`}
+          style={{
+            display: 'inline-block',
+            opacity,
+            transform: `translateY(${y}px)`,
+            filter: `blur(${blur}px)`,
+          }}
+        >
+          {word}
+        </span>
+      );
+    })}
+  </div>
 );
+
+/** One quarter of the bot head, used for the spread. */
+const Wedge: React.FC<{
+  color: string;
+  index: number;
+  progress: number;
+}> = ({ color, index, progress }) => {
+  const a = (index * Math.PI) / 2 - Math.PI / 2;
+  const b = a + Math.PI / 2;
+  const x1 = Math.cos(a) * 100;
+  const y1 = Math.sin(a) * 100;
+  const x2 = Math.cos(b) * 100;
+  const y2 = Math.sin(b) * 100;
+  const d = `M0 0 L${x1} ${y1} A100 100 0 0 1 ${x2} ${y2} Z`;
+  const spread = interpolate(progress, [0, 0.9], [1, 0], {
+    ...clamp,
+    easing: Easing.out(Easing.cubic),
+  });
+  const dx = Math.cos(a + Math.PI / 4) * 260 * spread;
+  const dy = (300 + index * 30) * spread;
+
+  return (
+    <g
+      transform={`translate(${dx} ${dy}) scale(${0.5 + progress * 0.5})`}
+      opacity={progress}
+    >
+      <path d={d} fill={color} />
+    </g>
+  );
+};
+
+const SpreadingBot: React.FC<{ frame: number; fps: number }> = ({ frame, fps }) => {
+  const progress = spring({
+    frame,
+    fps,
+    config: { damping: 14, stiffness: 90, mass: 0.8 },
+  });
+  const grow = spring({
+    frame: frame - 12,
+    fps,
+    config: { damping: 16, stiffness: 110 },
+  });
+  const eyes = interpolate(frame, [26, 42], [0, 1], clamp);
+  const wiggle = Math.sin(frame / 9) * 3;
+
+  return (
+    <svg
+      width="460"
+      height="460"
+      viewBox="-140 -140 280 280"
+      style={{ transform: `scale(${0.7 + grow * 1.2}) rotate(${wiggle}deg)` }}
+    >
+      <circle cx="0" cy="0" r="112" fill="#00000010" />
+      <g>
+        {PALETTE.map((color, index) => (
+          <Wedge key={color} color={color} index={index} progress={progress} />
+        ))}
+      </g>
+      <g opacity={eyes}>
+        <ellipse cx="-30" cy="-8" rx="8" ry="20" fill={INK} transform="rotate(-10 -30 -8)" />
+        <ellipse cx="32" cy="-14" rx="8" ry="20" fill={INK} transform="rotate(-10 32 -14)" />
+      </g>
+    </svg>
+  );
+};
 
 export const MailroomDemo: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const enter = spring({ frame, fps, config: { damping: 200 } });
-  const step = Math.min(STEPS.length - 1, Math.floor(frame / 60));
-  const local = frame - step * 60;
-  const stepOpacity = interpolate(local, [0, 6, 54, 60], [0, 1, 1, 0], clamp);
-  const stepY = interpolate(local, [0, 10, 52, 60], [22, 0, 0, -14], clamp);
-  const stepBlur = interpolate(local, [0, 7, 54, 60], [10, 0, 0, 8], clamp);
-  const draw = interpolate(local, [4, 34], [0, 1], clamp);
-  const dotY = interpolate(frame, [0, 58], [-70, 104], clamp);
-  const checkDraw = interpolate(frame, [240, 280], [0, 1], clamp);
-  const pulse = 1 + Math.sin(frame / 6) * 0.012;
+
+  const phraseIndex = Math.min(2, Math.floor(frame / 100));
+  const phraseStart = phraseIndex * 100 + 8;
+  const phraseOpacity = interpolate(
+    frame,
+    [phraseStart - 8, phraseStart, 290, 306],
+    [0, 1, 1, 0],
+    clamp,
+  );
+  const botFrame = frame - 300;
+  const botVisible = botFrame >= 0;
+  const reset = interpolate(frame, [350, 360], [1, 0], clamp);
 
   return (
     <AbsoluteFill
       style={{
-        background: `radial-gradient(circle at 50% 42%, #161616 0%, ${C.bg} 62%)`,
-        color: C.ink,
+        background: PAPER,
+        color: INK,
         fontFamily: 'Inter, sans-serif',
-        opacity: interpolate(frame, [352, 360], [1, 0], clamp),
+        opacity: reset,
+        overflow: 'hidden',
       }}
     >
       <style>{fontCss}</style>
 
-      {/* frame */}
+      {/* thin frame */}
       <div
         style={{
           position: 'absolute',
-          inset: 46,
-          border: `1px solid ${C.line}`,
-          borderRadius: 20,
+          inset: 42,
+          border: '1px solid rgba(10,10,10,0.1)',
+          borderRadius: 18,
         }}
       />
+
       <div
         style={{
           position: 'absolute',
-          top: 78,
-          left: 88,
+          top: 76,
+          left: 84,
           fontFamily: "'Geist Mono', monospace",
           fontSize: 13,
           letterSpacing: 2.4,
-          color: C.muted,
+          color: 'rgba(10,10,10,0.45)',
         }}
       >
-        Mailroom / the process
+        MAILROOM / THE PROCESS
       </div>
       <div
         style={{
           position: 'absolute',
-          top: 78,
-          right: 88,
+          top: 76,
+          right: 84,
           fontFamily: "'Geist Mono', monospace",
           fontSize: 13,
           letterSpacing: 2.4,
-          color: C.muted,
+          color: 'rgba(10,10,10,0.45)',
         }}
       >
-        {String(step + 1).padStart(2, '0')} / 06
+        {String(phraseIndex + 1).padStart(2, '0')} / 03
       </div>
 
-      {/* icon */}
+      {/* word-by-word copy */}
       <div
         style={{
           position: 'absolute',
-          top: 132,
+          top: 238,
           left: 0,
           width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          opacity: enter,
-          transform: `scale(${pulse})`,
-        }}
-      >
-        <svg width="280" height="210" viewBox="0 0 280 210">
-          {/* the letter */}
-          <circle cx={140} cy={dotY} r="7" fill={PALETTE[step]} opacity={step === 0 ? 1 : 0} />
-          <rect
-            x="18"
-            y="52"
-            width="244"
-            height="132"
-            rx="16"
-            fill="none"
-            stroke={C.ink}
-            strokeWidth="3"
-            opacity="0.9"
-          />
-          {/* flap, drawn on with a dash */}
-          <path
-            d="M18 68 L140 138 L262 68"
-            fill="none"
-            stroke={C.ink}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray="270"
-            strokeDashoffset={270 * (1 - draw)}
-            opacity="0.9"
-          />
-          {/* approval check */}
-          <path
-            d="M112 118 L132 136 L170 100"
-            fill="none"
-            stroke="#5BC67A"
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="90"
-            strokeDashoffset={90 * (1 - checkDraw)}
-          />
-        </svg>
-      </div>
-
-      {/* changing copy */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 372,
-          left: 0,
-          width: '100%',
+          padding: '0 90px',
           textAlign: 'center',
-          padding: '0 80px',
+          fontSize: 66,
+          fontWeight: 500,
+          letterSpacing: -2.4,
+          lineHeight: 1.06,
+          opacity: phraseOpacity,
         }}
       >
-        <div
-          key={step}
-          style={{
-            fontSize: 62,
-            fontWeight: 500,
-            letterSpacing: -2.4,
-            lineHeight: 1.05,
-            opacity: stepOpacity,
-            transform: `translateY(${stepY}px)`,
-            filter: `blur(${stepBlur}px)`,
-          }}
-        >
-          {STEPS[step].line}
-        </div>
-        <div
-          key={`${step}-note`}
-          style={{
-            marginTop: 18,
-            fontFamily: "'Geist Mono', monospace",
-            fontSize: 14,
-            letterSpacing: 2.6,
-            textTransform: 'uppercase',
-            color: C.muted,
-            opacity: stepOpacity,
-          }}
-        >
-          {STEPS[step].note}
-        </div>
+        <WordByWord
+          key={phraseIndex}
+          text={PHRASES[phraseIndex]}
+          start={phraseStart}
+          frame={frame}
+        />
       </div>
 
-      {/* progress */}
+      {/* the bot spreads up from the bottom and grows */}
+      {botVisible ? (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <SpreadingBot frame={botFrame} fps={fps} />
+        </div>
+      ) : null}
+
+      {/* progress rule */}
       <div
         style={{
           position: 'absolute',
-          bottom: 96,
-          left: 88,
-          right: 88,
+          bottom: 88,
+          left: 84,
+          right: 84,
           display: 'flex',
           gap: 10,
         }}
       >
-        {STEPS.map((s, index) => (
+        {PHRASES.map((p, index) => (
           <div
-            key={s.line}
+            key={p}
             style={{
               height: 3,
               flex: 1,
-              background: index <= step ? PALETTE[index] : C.line,
-              opacity: index <= step ? 1 : 0.7,
+              background: index <= phraseIndex ? INK : 'rgba(10,10,10,0.12)',
             }}
           />
-        ))}
-      </div>
-
-      {/* bot accents on the final beat */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 126,
-          left: 0,
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 10,
-          opacity: interpolate(frame, [300, 322], [0, 1], clamp),
-        }}
-      >
-        {PALETTE.slice(0, 3).map((color) => (
-          <BotDot key={color} color={color} />
         ))}
       </div>
     </AbsoluteFill>
