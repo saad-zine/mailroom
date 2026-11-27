@@ -79,11 +79,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* The landing page owns a near-black field; the app stays light. */
+/* The landing page and app both use a light canvas. */
 html:has(.lp),
 body:has(.lp) {
-  background: #0a0a0a;
-  color: #ffffff;
+  background: #ffffff;
+  color: #111827;
 }
 
 ::selection {

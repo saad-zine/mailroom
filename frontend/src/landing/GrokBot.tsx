@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type CSSProperties } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 
 /**
  * GrokBot — the x.ai bot head: one round shell with two slanted eyes cut
@@ -25,10 +25,6 @@ type BotMarkProps = {
   fg?: string;
   bg?: string;
   animated?: boolean;
-  /** Fill the head with a slow, colour-changing gradient. */
-  gradient?: boolean;
-  /** Palette for that gradient. */
-  gradientColors?: string[];
   title?: string;
   className?: string;
   style?: CSSProperties;
@@ -39,8 +35,6 @@ export function BotMark({
   fg = 'currentColor',
   bg = '#0a0a0a',
   animated = false,
-  gradient = false,
-  gradientColors = ['#F19D38', '#EA4045', '#885CF5', '#3C82F6'],
   title,
   className,
   style,
@@ -48,7 +42,6 @@ export function BotMark({
   const eyeLeft = useRef<SVGGElement>(null);
   const eyeRight = useRef<SVGGElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const gradientId = `bot-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   useEffect(() => {
     if (!animated) return;
@@ -61,17 +54,18 @@ export function BotMark({
 
     let px = 0;
     let py = 0;
-    let hasPointer = false;
+    let lastPointerMove = -Infinity;
     const onMove = (event: PointerEvent) => {
       // Track the cursor across the whole page, not just this little mark.
       px = (event.clientX / window.innerWidth - 0.5) * 2;
       py = (event.clientY / window.innerHeight - 0.5) * 2;
-      hasPointer = true;
+      lastPointerMove = performance.now();
     };
     window.addEventListener('pointermove', onMove, { passive: true });
 
     let raf = 0;
     let last = performance.now();
+    const started = last;
     let gx = 0;
     let gy = 0;
     let blinkStart = -1;
@@ -80,12 +74,15 @@ export function BotMark({
     const tick = (now: number) => {
       const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
       last = now;
-      const t = now / 1000;
+      const t = (now - started) / 1000;
 
-      const idleX = Math.sin(t * 0.43) * 0.6 + Math.sin(t * 0.19 + 1.7) * 0.25;
-      const idleY = Math.sin(t * 0.31 + 1.2) * 0.4;
-      const tx = hasPointer ? Math.max(-1, Math.min(1, px)) : idleX;
-      const ty = hasPointer ? Math.max(-1, Math.min(1, py)) : idleY;
+      // A full, symmetric left-to-right sweep keeps the character alive even
+      // after a pointer stops moving (and on touch devices without a pointer).
+      const idleX = Math.sin(t * Math.PI / 3) * 0.85;
+      const idleY = Math.sin(t * 0.55) * 0.2;
+      const pointerWeight = Math.max(0, 1 - Math.max(0, now - lastPointerMove - 1200) / 1000);
+      const tx = idleX * (1 - pointerWeight) + Math.max(-1, Math.min(1, px)) * pointerWeight;
+      const ty = idleY * (1 - pointerWeight) + Math.max(-1, Math.min(1, py)) * pointerWeight;
 
       const k = 1 - Math.exp(-7.5 * dt);
       gx += (tx - gx) * k;
@@ -112,7 +109,7 @@ export function BotMark({
       // Turn the whole shell toward the cursor, then lead with the eyes.
       // Values are in the 92-space the eye paths use; the parent group
       // scales them up to the head.
-      svg.style.transform = `perspective(420px) rotateY(${gx * 16}deg) rotateX(${-gy * 12}deg)`;
+      svg.style.transform = `perspective(420px) translateX(${gx * 3}px) rotateY(${gx * 20}deg) rotateZ(${gx * 4}deg) rotateX(${-gy * 10}deg)`;
       const dx = gx * 2.6;
       const dy = gy * 2.1;
       const tilt = gx * 3;
@@ -143,21 +140,7 @@ export function BotMark({
       focusable="false"
     >
       {title ? <title>{title}</title> : null}
-      {gradient ? (
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            {gradientColors.map((color, index) => (
-              <stop
-                key={`${color}-${index}`}
-                offset={`${(index / (gradientColors.length - 1)) * 100}%`}
-                stopColor={color}
-                className={`grok-grad-${'abcd'[index] ?? 'a'}`}
-              />
-            ))}
-          </linearGradient>
-        </defs>
-      ) : null}
-      <path d={HEAD} fill={gradient ? `url(#${gradientId})` : fg} />
+      <path d={HEAD} fill={fg} />
       <g transform={EYE_TRANSFORM}>
         <g ref={eyeLeft} className="grok-eye">
           <path d={EYE_LEFT} fill={bg} />
