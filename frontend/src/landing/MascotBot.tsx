@@ -1,43 +1,214 @@
 import { useRef, useEffect, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, extend } from '@react-three/fiber';
 import { Environment, ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
+import { ShaderMaterial } from 'three';
 
 /**
- * MascotBot — small, rounded white robot head (Grok-style).
- * Transparent canvas overlay that tracks cursor globally.
- * No extra page layout — just the component.
+ * MascotBot — small rounded white head with INTEGRATED shader eyes (Grok-style).
+ * Eyes are drawn in the fragment shader as part of the head surface,
+ * enabling expressive morphing: blink, squint, widen, gaze, pupil dilation.
  */
 
-// --- Constants: small, cute, balanced ---
-const HEAD_SIZE = 1.1;         // small but readable
-const HEAD_RADIUS = 0.5;       // nicely rounded
-const HEAD_SMOOTHNESS = 12;    // very smooth
+extend({ ShaderMaterial });
 
-const EYE_RADIUS = 0.075;      // moderate width
-const EYE_HEIGHT = 0.12;       // slightly vertical oval (cute)
-const EYE_Z = 0.55;
-const EYE_Y = 0.05;
-const EYE_X = 0.24;            // natural spacing
+// --- Constants ---
+const HEAD_SIZE = 1.1;
+const HEAD_RADIUS = 0.5;
+const HEAD_SMOOTHNESS = 12;
 
-const MAX_ROT_Y = 0.35;        // slightly less rotation range
+const MAX_ROT_Y = 0.35;
 const MAX_ROT_X = 0.2;
 const LERP_FACTOR = 0.1;
-const EYE_SHIFT_FACTOR = 0.1;
+const HEAD_GAZE_FACTOR = 0.08; // subtle head micro-movement
 
-const WHITE_VINYL = '#f8fafc';
-const BLACK_EYE = '#09090b';
+const WHITE_VINYL = new THREE.Color('#f8fafc');
+const EYE_BLACK = new THREE.Color('#09090b');
+const EYE_WHITE = new THREE.Color('#f0f0f0');
+const PUPIL_BLACK = new THREE.Color('#000000');
+
+// Vertex shader — standard RoundedBox UVs passed through
+const vertexShader = /* glsl */`
+  varying vec3 vNormal;
+  varying vec3 vWorldPos;
+  varying vec2 vUv;
+
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+// Fragment shader — head surface + integrated expressive eyes
+const fragmentShader = /* glsl */`
+  varying vec3 vNormal;
+  varying vec3 vWorldPos;
+  varying vec2 vUv;
+
+  uniform float uTime;
+  uniform vec3 uViewDir;        // camera view direction
+  uniform vec2 uGaze;           // normalized cursor (-1..1)
+  uniform float uBlink;         // 0..1 blink amount
+  uniform float uSquint;        // 0..1 squint amount
+  uniform float uWiden;         // 0..1 widen amount
+  uniform float uPupilSize;     // 0..1 pupil dilation
+  uniform float uExpression;    // expression phase for idle animation
+
+  // Head material colors
+  uniform vec3 uHeadColor;
+  uniform vec3 uEyeWhiteColor;
+  uniform vec3 uEyeIrisColor;
+  uniform vec3 uPupilColor;
+
+  // SDF for rounded box (matches RoundedBox geometry approx)
+  float sdRoundedBox(vec3 p, vec3 b, float r) {
+    return length(max(abs(p) - b + vec3(r), 0.0)) - r;
+  }
+
+  // Smoothstep helpers
+  float smoothInOut(float t) { return t * t * (3.0 - 2.0 * t); }
+  float smoothIn(float t) { return t * t; }
+  float smoothOut(float t) { return 1.0 - (1.0 - t) * (1.0 - t); }
+
+  // Eye shape SDF — horizontal capsule/stadium that can morph
+  float eyeShape(vec2 p, float width, float height, float roundness) {
+    vec2 q = abs(p) - vec2(width, height) + vec2(roundness);
+    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - roundness;
+  }
+
+  // Pupil SDF — circle
+  float pupilShape(vec2 p, float r) { return length(p) - r; }
+
+  void main() {
+    // --- Base head surface ---
+    vec3 N = normalize(vNormal);
+    vec3 V = normalize(-uViewDir);
+    
+    // Fresnel for subtle edge highlight
+    float fresnel = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+    
+    // Lighting
+    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.8));
+    float diff = max(dot(N, lightDir), 0.0);
+    float rim = pow(1.0 - max(dot(N, -lightDir), 0.0), 2.0);
+    
+    vec3 headBase = uHeadColor * (0.4 + 0.6 * diff) + vec3(0.02) * rim + vec3(0.03) * fresnel;
+    
+    // Clearcoat highlight
+    vec3 halfDir = normalize(lightDir + V);
+    float clearcoat = pow(max(dot(N, halfDir), 0.0), 64.0) * 0.5;
+
+    // --- Eye UV projection ---
+    // Project world position to face-local coordinates for eye placement
+    // Eyes sit on front face (positive Z)
+    vec3 localPos = vWorldPos;
+    
+    // Eye parameters (in head-local space, normalized to head size)
+    float eyeY = 0.07;      // vertical position
+    float eyeX = 0.22;      // horizontal offset from center
+    float eyeW = 0.14;      // base half-width
+    float eyeH = 0.09;      // base half-height
+    float eyeRound = 0.06;  // corner roundness
+
+    // --- Expressive eye morphing ---
+    // Blink: vertical scale
+    float blinkScale = mix(1.0, 0.05, smoothInOut(uBlink));
+    // Squint: lower top lid, slight horizontal widen
+    float squintTop = mix(0.0, 0.35, smoothIn(uSquint));
+    float squintWiden = 1.0 + uSquint * 0.15;
+    // Widen: vertical expand, horizontal slight shrink
+    float widenScale = mix(1.0, 1.3, smoothIn(uWiden));
+    float widenShrink = mix(1.0, 0.9, smoothIn(uWiden));
+
+    // Combined eye dimensions
+    float curEyeH = eyeH * blinkScale * widenScale;
+    float curEyeW = eyeW * squintWiden * widenShrink;
+    float lidOffset = eyeH * squintTop * (1.0 - uBlink); // top lid only when not blinking
+
+    // Gaze offset (pupil movement within eye)
+    vec2 gazeOffset = uGaze * vec2(curEyeW * 0.35, curEyeH * 0.25);
+
+    // Pupil size
+    float pupilR = mix(0.25, 0.55, smoothInOut(uPupilSize)) * curEyeH;
+
+    // --- Left eye ---
+    vec2 leftUV = vec2(
+      (localPos.x + eyeX) / HEAD_SIZE * 2.0,
+      (localPos.y - eyeY - lidOffset * 0.5) / HEAD_SIZE * 2.0
+    );
+    
+    float leftEyeDist = eyeShape(leftUV - gazeOffset, curEyeW, curEyeH, eyeRound);
+    float leftPupilDist = pupilShape(leftUV - gazeOffset, pupilR);
+    
+    // Eye white (sclera)
+    float leftEyeMask = 1.0 - smoothstep(0.0, 0.015, leftEyeDist);
+    // Pupil
+    float leftPupilMask = 1.0 - smoothstep(0.0, 0.01, leftPupilDist);
+    // Eyelid shadow at top
+    float leftLidShadow = smoothstep(-0.02, 0.0, leftUV.y + curEyeH * 0.5) * 0.3;
+
+    // --- Right eye ---
+    vec2 rightUV = vec2(
+      (localPos.x - eyeX) / HEAD_SIZE * 2.0,
+      (localPos.y - eyeY - lidOffset * 0.5) / HEAD_SIZE * 2.0
+    );
+    
+    float rightEyeDist = eyeShape(rightUV - gazeOffset, curEyeW, curEyeH, eyeRound);
+    float rightPupilDist = pupilShape(rightUV - gazeOffset, pupilR);
+    
+    float rightEyeMask = 1.0 - smoothstep(0.0, 0.015, rightEyeDist);
+    float rightPupilMask = 1.0 - smoothstep(0.0, 0.01, rightPupilDist);
+    float rightLidShadow = smoothstep(-0.02, 0.0, rightUV.y + curEyeH * 0.5) * 0.3;
+
+    // Combine eyes
+    float eyeMask = max(leftEyeMask, rightEyeMask);
+    float pupilMask = max(leftPupilMask, rightPupilMask);
+    float lidShadow = max(leftLidShadow, rightLidShadow);
+
+    // Only draw eyes on front-facing area (z > 0)
+    float frontFace = smoothstep(-0.1, 0.1, localPos.z / HEAD_SIZE);
+    eyeMask *= frontFace;
+    pupilMask *= frontFace;
+    lidShadow *= frontFace;
+
+    // --- Final color composition ---
+    vec3 color = headBase;
+    
+    // Eye whites
+    color = mix(color, uEyeWhiteColor, eyeMask * (1.0 - pupilMask));
+    // Pupils
+    color = mix(color, uPupilColor, pupilMask);
+    // Eyelid shadow
+    color = color * (1.0 - lidShadow);
+    // Clearcoat
+    color += vec3(clearcoat) * 0.4;
+
+    // Subtle ambient occlusion in creases
+    float ao = 1.0 - smoothstep(-0.5, 0.5, vNormal.z) * 0.1;
+    color *= ao;
+
+    // Output
+    gl_FragColor = vec4(color, 1.0);
+    
+    // Alpha for transparency at edges (optional, for clean edges)
+    // gl_FragColor.a = 1.0;
+  }
+`;
 
 function MascotScene() {
-  const headRef = useRef<THREE.Group>(null);
-  const leftEyeRef = useRef<THREE.Mesh>(null);
-  const rightEyeRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   const clock = useThree((state) => state.clock);
+  const camera = useThree((state) => state.camera);
 
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
-  const [blink, setBlink] = useState(1);
+  const [blink, setBlink] = useState(0);
+  const [squint, setSquint] = useState(0);
+  const [widen, setWiden] = useState(0);
+  const [pupilSize, setPupilSize] = useState(0.35);
 
-  // Global mouse tracking — pointerEvents: 'none' on wrapper lets clicks through
+  // Global mouse tracking
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       setMouse({
@@ -49,72 +220,102 @@ function MascotScene() {
     return () => window.removeEventListener('mousemove', onMove);
   }, []);
 
-  // Blink timer ~ every 4s
+  // Blink timer ~ every 3-5s
+  useEffect(() => {
+    const schedule = () => {
+      const delay = 3000 + Math.random() * 2000;
+      setTimeout(() => {
+        setBlink(1);
+        setTimeout(() => setBlink(0), 150);
+        schedule();
+      }, delay);
+    };
+    schedule();
+  }, []);
+
+  // Random expression micro-movements (squint, widen, pupil dilation)
   useEffect(() => {
     const id = setInterval(() => {
-      setBlink(0.08);
-      setTimeout(() => setBlink(1), 120);
-    }, 4000 + Math.random() * 1000);
+      const expr = Math.random();
+      if (expr < 0.3) {
+        setSquint(0.4 + Math.random() * 0.3);
+        setTimeout(() => setSquint(0), 800 + Math.random() * 1200);
+      } else if (expr < 0.5) {
+        setWiden(0.3 + Math.random() * 0.4);
+        setTimeout(() => setWiden(0), 600 + Math.random() * 1000);
+      }
+      // Pupil dilation variation
+      setPupilSize(0.25 + Math.random() * 0.5);
+    }, 2000 + Math.random() * 3000);
     return () => clearInterval(id);
   }, []);
 
-  // Head + eyes follow cursor smoothly
+  // Animation frame
   useFrame(() => {
-    if (!headRef.current) return;
+    if (!meshRef.current) return;
 
+    const time = clock.getElapsedTime();
+
+    // Head rotation follows cursor (lerped)
     const targetY = THREE.MathUtils.clamp(mouse.x * MAX_ROT_Y, -MAX_ROT_Y, MAX_ROT_Y);
     const targetX = THREE.MathUtils.clamp(mouse.y * MAX_ROT_X, -MAX_ROT_X, MAX_ROT_X);
 
-    headRef.current.rotation.y = THREE.MathUtils.lerp(headRef.current.rotation.y, targetY, LERP_FACTOR);
-    headRef.current.rotation.x = THREE.MathUtils.lerp(headRef.current.rotation.x, targetX, LERP_FACTOR);
+    meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetY, LERP_FACTOR);
+    meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, targetX, LERP_FACTOR);
 
     // Gentle vertical bob
-    const time = clock.getElapsedTime();
-    headRef.current.position.y = Math.sin(time * 2) * 0.04;
+    meshRef.current.position.y = Math.sin(time * 1.8) * 0.04;
 
-    // Eyes shift slightly with gaze
-    const shiftX = mouse.x * EYE_SHIFT_FACTOR;
-    const shiftY = mouse.y * EYE_SHIFT_FACTOR;
+    // Micro head tilt toward gaze (adds life)
+    meshRef.current.rotation.z = THREE.MathUtils.lerp(
+      meshRef.current.rotation.z,
+      -mouse.x * HEAD_GAZE_FACTOR * 0.5,
+      LERP_FACTOR * 0.5
+    );
 
-    if (leftEyeRef.current) {
-      leftEyeRef.current.position.x = -EYE_X + shiftX;
-      leftEyeRef.current.position.y = EYE_Y + shiftY;
-      leftEyeRef.current.scale.y = blink;
-    }
-    if (rightEyeRef.current) {
-      rightEyeRef.current.position.x = EYE_X + shiftX;
-      rightEyeRef.current.position.y = EYE_Y + shiftY;
-      rightEyeRef.current.scale.y = blink;
+    // Update shader uniforms
+    const mat = meshRef.current.material as THREE.ShaderMaterial;
+    if (mat.uniforms) {
+      mat.uniforms.uTime.value = time;
+      mat.uniforms.uGaze.value = new THREE.Vector2(mouse.x, mouse.y);
+      mat.uniforms.uBlink.value = blink;
+      mat.uniforms.uSquint.value = squint;
+      mat.uniforms.uWiden.value = widen;
+      mat.uniforms.uPupilSize.value = pupilSize;
+      mat.uniforms.uExpression.value = Math.sin(time * 0.7) * 0.5 + Math.cos(time * 1.3) * 0.5;
+      mat.uniforms.uViewDir.value = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
     }
   });
 
   return (
-    <group ref={headRef}>
-      {/* Rounded Head Shell — near-spherical */}
+    <group>
       <RoundedBox
+        ref={meshRef}
         args={[HEAD_SIZE, HEAD_SIZE, HEAD_SIZE]}
         radius={HEAD_RADIUS}
         smoothness={HEAD_SMOOTHNESS}
         position={[0, 0, 0]}
       >
-        <meshPhysicalMaterial
-          color={WHITE_VINYL}
-          roughness={0.2}
-          metalness={0.02}
-          clearcoat={0.7}
-          clearcoatRoughness={0.15}
+        <shaderMaterial
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          uniforms={{
+            uTime: { value: 0 },
+            uViewDir: { value: new THREE.Vector3(0, 0, -1) },
+            uGaze: { value: new THREE.Vector2(0, 0) },
+            uBlink: { value: 0 },
+            uSquint: { value: 0 },
+            uWiden: { value: 0 },
+            uPupilSize: { value: 0.35 },
+            uExpression: { value: 0 },
+            uHeadColor: { value: WHITE_VINYL },
+            uEyeWhiteColor: { value: EYE_WHITE },
+            uEyeIrisColor: { value: EYE_BLACK },
+            uPupilColor: { value: PUPIL_BLACK },
+          }}
+          transparent={false}
         />
       </RoundedBox>
-
-      {/* Rounded Eyes — simple capsules */}
-      <mesh ref={leftEyeRef} position={[-EYE_X, EYE_Y, EYE_Z]}>
-        <capsuleGeometry args={[EYE_RADIUS, EYE_HEIGHT, 8, 16]} />
-        <meshStandardMaterial color={BLACK_EYE} roughness={0.1} />
-      </mesh>
-      <mesh ref={rightEyeRef} position={[EYE_X, EYE_Y, EYE_Z]}>
-        <capsuleGeometry args={[EYE_RADIUS, EYE_HEIGHT, 8, 16]} />
-        <meshStandardMaterial color={BLACK_EYE} roughness={0.1} />
-      </mesh>
     </group>
   );
 }
