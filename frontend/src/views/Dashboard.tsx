@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, CheckSquare, Inbox as InboxIcon, Mail, Percent } from 'lucide-react';
-import { Bot } from '../components/Bot';
 import { api, type EmailItem, type Draft, type Stats } from '../lib/api';
 import { formatRelativeTime, initials, senderName } from '../lib/utils';
 import {
@@ -63,33 +62,29 @@ export function Dashboard({
 
   useEffect(load, []);
 
-  const total = stats?.total_emails || 1;
+  if (loading) return <LoadingState label="Loading dashboard…" />;
+  if (error || !stats) return <ErrorState message={error ?? 'Could not load stats.'} onRetry={load} />;
+
+  const total = stats.total_emails || 1;
   const approvalPct = Math.round(
-    (stats?.approval_rate ?? 0) > 1 ? (stats?.approval_rate ?? 0) : (stats?.approval_rate ?? 0) * 100,
+    (stats.approval_rate ?? 0) > 1 ? (stats.approval_rate ?? 0) : (stats.approval_rate ?? 0) * 100,
   );
 
   return (
-    <div className="dashboard">
-      <section className="dashboard-hero">
-        <div className="hero-copy">
-          <div className="eyebrow"><span className="eyebrow-dot" /> YOUR INBOX, UNDER CONTROL <span className="eyebrow-number">/ 01</span></div>
-          <h1>Good {greeting()},<br />let’s make <Bot /> <span>room.</span></h1>
-          <p>Less time in your inbox. More time for the work that matters. Mailroom drafts replies; you decide what goes out.</p>
-          <div className="hero-actions">
-            <Button variant="primary" size="lg" onClick={onGoQueue}>Review drafts <ArrowRight className="h-4 w-4" /></Button>
-            <Button variant="secondary" size="lg" onClick={onGoInbox}>Open inbox</Button>
-          </div>
-        </div>
-        <div className="hero-aside" aria-hidden="true">
-          <span className="hero-aside-label">A LITTLE MORE<br />SPACE TO THINK.</span>
-          <div className="hero-envelope"><span>✳</span><Mail size={52} strokeWidth={1.2} /></div>
-          <span className="hero-aside-bottom">MADE FOR BETTER WORK <span>↗</span></span>
-        </div>
-      </section>
-      <div className="dashboard-section-title"><div><span className="section-kicker">THE BIG PICTURE</span><h2>At a glance<span>.</span></h2></div><span className="section-number">01 — OVERVIEW</span></div>
-      {loading ? <Card><LoadingState label="Loading dashboard…" /></Card> : error || !stats ? <Card><ErrorState message={error ?? 'Could not load stats.'} onRetry={load} /></Card> : <>
+    <div className="space-y-8">
+      {/* Greeting */}
+      <div>
+        <h1 className="text-[28px] font-semibold leading-tight text-ink">
+          Good {greeting()}, here&apos;s your inbox.
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          Mailroom has drafted replies for your support mail — review them before anything
+          goes out.
+        </p>
+      </div>
+
       {/* Stat cards */}
-      <div className="stats-grid">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           icon={<Mail className="h-[18px] w-[18px] text-muted" strokeWidth={1.5} />}
           label="Total emails"
@@ -119,7 +114,7 @@ export function Dashboard({
       </div>
 
       {/* Category breakdown */}
-      <Card className="category-card p-5">
+      <Card className="p-5">
         <SectionHeader
           title="By category"
           subtitle="How the inbox breaks down across the four categories."
@@ -133,9 +128,9 @@ export function Dashboard({
                 <span className="w-36 shrink-0 text-[13px] text-body">
                   {CATEGORY_LABELS[cat]}
                 </span>
-                <div className="h-2 flex-1 overflow-hidden bg-neutral-tint">
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-tint">
                   <div
-                    className="h-full bg-teal transition-all duration-300"
+                    className="h-full rounded-full bg-teal transition-all duration-300"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -179,7 +174,7 @@ export function Dashboard({
                 key={d.id}
                 type="button"
                 onClick={() => onOpenEmail(d.email_id)}
-                className="mail-row flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-wash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal/30"
+                className="flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-wash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal/30"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-tint text-xs font-semibold text-body">
                   {initials(d.sender)}
@@ -226,7 +221,7 @@ export function Dashboard({
                 key={e.id}
                 type="button"
                 onClick={() => onOpenEmail(e.id)}
-                className="mail-row flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-wash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal/30"
+                className="flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-wash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal/30"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-tint text-xs font-semibold text-body">
                   {initials(e.sender)}
@@ -253,7 +248,6 @@ export function Dashboard({
           </Card>
         )}
       </div>
-      </>}
     </div>
   );
 }
@@ -279,12 +273,12 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <Card className="stat-card p-5">
+    <Card className="p-5">
       <div className="flex items-center justify-between">
         <span className="text-[13px] text-muted">{label}</span>
         {icon}
       </div>
-      <p className="stat-value">{value}</p>
+      <p className="mt-2 text-[28px] font-semibold leading-none text-ink">{value}</p>
       {sub ? (
         <p className="mt-2 text-xs text-muted">{sub}</p>
       ) : accent ? (

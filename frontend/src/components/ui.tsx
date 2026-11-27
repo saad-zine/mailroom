@@ -10,7 +10,7 @@ type ButtonSize = 'sm' | 'md' | 'lg';
 
 const buttonVariants: Record<ButtonVariant, string> = {
   primary:
-    'bg-ink text-white border border-ink hover:bg-info focus-visible:ring-ink/20',
+    'bg-ink text-white border border-ink hover:bg-black focus-visible:ring-ink/20',
   secondary:
     'bg-paper text-ink border border-border hover:border-border-strong hover:bg-wash focus-visible:ring-teal/20',
   ghost:
@@ -18,7 +18,7 @@ const buttonVariants: Record<ButtonVariant, string> = {
   destructive:
     'bg-error text-white border border-error hover:bg-[#b91c1c] focus-visible:ring-error/20',
   accent:
-    'bg-teal text-white border border-teal hover:bg-[#1b45b1] focus-visible:ring-teal/20',
+    'bg-teal text-white border border-teal hover:bg-[#0b7d73] focus-visible:ring-teal/20',
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -45,7 +45,7 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex cursor-pointer items-center justify-center rounded-sm font-semibold',
+        'inline-flex cursor-pointer items-center justify-center rounded-lg font-medium',
         'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2',
         'disabled:cursor-not-allowed disabled:border-border disabled:bg-wash disabled:text-faint',
         buttonVariants[variant],
@@ -86,7 +86,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-sm px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap',
         badgeTones[tone],
         className,
       )}
@@ -130,7 +130,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={cn('rounded-sm border border-border bg-paper', className)}>
+    <div className={cn('rounded-lg border border-border bg-paper', className)}>
       {children}
     </div>
   );
@@ -172,7 +172,7 @@ export function FilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        'cursor-pointer rounded-sm border px-3 py-1.5 text-[13px] font-medium transition-colors duration-150',
+        'cursor-pointer rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30',
         active
           ? 'border-ink bg-ink text-white'
