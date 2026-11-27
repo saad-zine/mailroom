@@ -1,6 +1,19 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { LetterScene } from './LetterScene';
+import { BotMark } from './GrokBot';
 import './landing.css';
+
+/** The nine tinted heads from x.ai's bot row. */
+const BOT_TINTS = [
+  '#97683D',
+  '#EA4045',
+  '#ED712E',
+  '#F19D38',
+  '#5BC67A',
+  '#54B9A6',
+  '#3C82F6',
+  '#885CF5',
+  '#EB4699',
+];
 
 const NAV = [
   { href: '#how', label: 'How it works' },
@@ -53,20 +66,32 @@ function Arrow() {
   return (
     <svg
       className="lp-arrow"
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
       fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M3 11L11 3M11 3H5.5M11 3V8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M5 11 11 5M6.5 5H11v4.5" />
     </svg>
+  );
+}
+
+/** One word, revealed on a stagger. */
+function Word({ children, i }: { children: string; i: number }) {
+  return (
+    <span className="lp-word" style={{ '--i': i } as CSSProperties}>
+      {children}
+    </span>
   );
 }
 
 export default function Landing() {
   const [solid, setSolid] = useState(false);
-  const [dragged, setDragged] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 40);
@@ -96,13 +121,11 @@ export default function Landing() {
     return () => observer.disconnect();
   }, []);
 
-  const firstDrag = () => setDragged(true);
-
   return (
     <div className="lp">
       <nav className={`lp-nav${solid ? ' is-solid' : ''}`} aria-label="Main">
         <a className="lp-brand" href="#top" aria-label="Mailroom home">
-          <span className="lp-brand-mark" aria-hidden="true" />
+          <BotMark size={22} fg="#ffffff" bg="#0a0a0a" />
           <span className="lp-brand-word">Mailroom</span>
         </a>
 
@@ -115,7 +138,7 @@ export default function Landing() {
         </div>
 
         <div className="lp-nav-actions">
-          <a className="lp-btn lp-btn-ghost" href="/app">
+          <a className="lp-btn lp-btn-quiet" href="/app">
             Sign in
           </a>
           <a className="lp-btn lp-btn-solid" href="/app">
@@ -126,37 +149,50 @@ export default function Landing() {
       </nav>
 
       <section className="lp-hero" id="top">
-        <div className="lp-hero-body">
-          <div className="lp-hero-inner">
-            <div className="lp-hero-grid">
-              <div className="lp-hero-text">
-                <p className="lp-kicker">AI correspondence — private by default</p>
-                <h1>
-                  Correspondence, <em>considered.</em>
-                </h1>
-                <p className="lp-hero-sub">
-                  Mailroom reads your inbox, drafts the reply in your voice, and waits.{' '}
-                  <b>Nothing leaves your Gmail until you say so.</b>
-                </p>
-                <div className="lp-hero-actions">
-                  <a className="lp-btn lp-btn-solid" href="/app">
-                    Open Mailroom
-                    <Arrow />
-                  </a>
-                  <a className="lp-btn lp-btn-ghost" href="#how">
-                    How it works
-                  </a>
-                </div>
-              </div>
+        <div className="lp-hero-inner">
+          <span className="lp-pill">
+            <span className="lp-pill-text">
+              <b>Private by default.</b> Read &amp; draft access only
+            </span>
+            <span className="lp-pill-badge" aria-hidden="true">
+              <BotMark size={14} fg="#ffffff" bg="#1a1a1a" />
+            </span>
+          </span>
 
-              <div className="lp-hero-visual">
-                <LetterScene className="lp-bot-canvas" onFirstDrag={firstDrag} />
-                <div className={`lp-drag-hint${dragged ? ' is-used' : ''}`}>
-                  360° — drag to rotate
-                </div>
-              </div>
-            </div>
+          <h1 className="lp-h1">
+            <Word i={0}>Meet</Word>{' '}
+            <span className="lp-word lp-bot-inline" style={{ '--i': 1 } as CSSProperties}>
+              <BotMark size="100%" animated />
+            </span>{' '}
+            <Word i={2}>Mailroom</Word>
+          </h1>
+
+          <p className="lp-hero-sub">
+            Mailroom reads your inbox, drafts the reply in your voice, and waits.
+            Nothing leaves your Gmail until you say so.
+          </p>
+
+          <div className="lp-hero-actions">
+            <a className="lp-btn lp-btn-solid lp-btn-lg" href="/app">
+              Open Mailroom
+              <Arrow />
+            </a>
+            <a className="lp-btn lp-btn-card lp-btn-lg" href="#how">
+              How it works
+            </a>
           </div>
+        </div>
+
+        <div className="lp-bot-row" aria-hidden="true">
+          {BOT_TINTS.map((tint, index) => (
+            <span
+              className="lp-bot-row-item"
+              key={tint}
+              style={{ '--i': index } as CSSProperties}
+            >
+              <BotMark size="100%" fg={tint} bg="#0a0a0a" />
+            </span>
+          ))}
         </div>
       </section>
 
@@ -164,24 +200,23 @@ export default function Landing() {
         <section className="lp-section" id="how">
           <div className="lp-wrap">
             <div className="lp-head" data-reveal>
-              <div>
-                <p className="lp-eyebrow">How it works</p>
-                <h2>
-                  Three steps. <em>You keep the pen.</em>
-                </h2>
+              <h2>
+                Three steps. <em>You keep the pen.</em>
+              </h2>
+              <div className="lp-head-copy">
+                <p>
+                  Mailroom is a copilot, not an auto-responder. It prepares the reply
+                  and leaves the decision where it belongs.
+                </p>
               </div>
-              <p>
-                Mailroom is a copilot, not an auto-responder. It prepares the reply and
-                leaves the decision where it belongs.
-              </p>
             </div>
 
-            <div className="lp-steps" data-reveal>
+            <div className="lp-grid lp-grid-3" data-reveal>
               {STEPS.map((step, index) => (
                 <article
-                  className="lp-step"
+                  className="lp-card lp-step"
                   key={step.n}
-                  style={{ '--delay': `${index * 90}ms` } as CSSProperties}
+                  style={{ '--delay': `${index * 80}ms` } as CSSProperties}
                 >
                   <span className="lp-step-num">{step.n}</span>
                   <h3>{step.title}</h3>
@@ -194,20 +229,19 @@ export default function Landing() {
 
         <section className="lp-section" id="app">
           <div className="lp-wrap">
-            <div className="lp-head" data-reveal>
-              <div>
-                <p className="lp-eyebrow">The workspace</p>
-                <h2>
-                  Everything on <em>one desk.</em>
-                </h2>
+            <div className="lp-head lp-head-center" data-reveal>
+              <h2>
+                Everything on <em>one desk.</em>
+              </h2>
+              <div className="lp-head-copy">
+                <p>
+                  The inbox, the drafts, and the knowledge behind them — with the
+                  reasoning left visible, so you can check the work before you sign it.
+                </p>
               </div>
-              <p>
-                The inbox, the drafts, and the knowledge behind them — with the reasoning
-                left visible, so you can check the work before you sign it.
-              </p>
             </div>
 
-            <div data-reveal>
+            <div className="lp-shot-wrap" data-reveal>
               <div className="lp-shot-head">
                 <span>Approval queue — live API state</span>
                 <span>Mailroom / Workspace</span>
@@ -224,10 +258,11 @@ export default function Landing() {
 
               <div className="lp-shot-cta">
                 <p>
-                  Connect a Gmail account and the first drafts appear in the queue. Edit
-                  them, approve them, or throw them away — the call is always yours.
+                  Connect a Gmail account and the first drafts appear in the queue.
+                  Edit them, approve them, or throw them away — the call is always
+                  yours.
                 </p>
-                <a className="lp-btn lp-btn-ink" href="/app">
+                <a className="lp-btn lp-btn-solid" href="/app">
                   Open Mailroom
                   <Arrow />
                 </a>
@@ -238,27 +273,26 @@ export default function Landing() {
 
         <section className="lp-section" id="privacy">
           <div className="lp-wrap">
-            <div className="lp-head" data-reveal>
-              <div>
-                <p className="lp-eyebrow">Privacy</p>
-                <h2>
-                  Your mail <em>stays yours.</em>
-                </h2>
+            <div className="lp-head lp-head-center" data-reveal>
+              <h2>
+                Your mail <em>stays yours.</em>
+              </h2>
+              <div className="lp-head-copy">
+                <p>
+                  The narrowest access that works, encrypted at rest, isolated by
+                  account. If you want out, one click disconnects the account.
+                </p>
               </div>
-              <p>
-                The narrowest access that works, encrypted at rest, isolated by account. If
-                you want out, one click disconnects the account.
-              </p>
             </div>
 
-            <div className="lp-facts" data-reveal>
+            <div className="lp-grid lp-grid-2" data-reveal>
               {FACTS.map((fact, index) => (
                 <article
-                  className="lp-fact"
+                  className="lp-card lp-fact"
                   key={fact.label}
                   style={{ '--delay': `${(index % 2) * 80}ms` } as CSSProperties}
                 >
-                  <span className="lp-fact-label">{fact.label}</span>
+                  <span className="lp-eyebrow">{fact.label}</span>
                   <h3>{fact.title}</h3>
                   <p>{fact.body}</p>
                 </article>
@@ -269,31 +303,32 @@ export default function Landing() {
       </main>
 
       <section className="lp-close">
-        <div className="lp-close-inner">
-          <div data-reveal>
-            <p className="lp-eyebrow" style={{ color: 'rgba(255,255,255,0.48)' }}>
-              Start
-            </p>
-            <h2>
-              Open the <em>mailroom.</em>
-            </h2>
-          </div>
-          <div className="lp-close-side" data-reveal style={{ '--delay': '120ms' } as CSSProperties}>
-            <p>
-              Connect a Gmail account. Mailroom drafts the first reply and waits for your
-              decision.
-            </p>
-            <a className="lp-btn lp-btn-cream" href="/app">
-              Open Mailroom
-              <Arrow />
-            </a>
-          </div>
+        <div className="lp-close-inner" data-reveal>
+          <BotMark size={44} fg="#ffffff" bg="#050505" />
+          <h2>
+            <Word i={0}>Open</Word> <Word i={1}>the</Word>{' '}
+            <span className="lp-word lp-bot-inline" style={{ '--i': 2 } as CSSProperties}>
+              <BotMark size="100%" fg="#ffffff" bg="#050505" animated />
+            </span>{' '}
+            <Word i={3}>mailroom.</Word>
+          </h2>
+          <p>
+            Connect a Gmail account. Mailroom drafts the first reply and waits for
+            your decision.
+          </p>
+          <a className="lp-btn lp-btn-solid lp-btn-lg" href="/app">
+            Open Mailroom
+            <Arrow />
+          </a>
         </div>
       </section>
 
       <footer className="lp-footer">
         <div className="lp-footer-inner">
-          <span>Mailroom — correspondence, considered</span>
+          <span className="lp-footer-brand">
+            <BotMark size={18} fg="#ffffff" bg="#050505" />
+            Mailroom
+          </span>
           <div className="lp-footer-links">
             <a href="#how">How it works</a>
             <a href="#privacy">Privacy</a>
