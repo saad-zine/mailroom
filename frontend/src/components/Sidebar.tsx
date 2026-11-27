@@ -1,15 +1,5 @@
-import {
-  BookOpen,
-  ChevronsUpDown,
-  Inbox,
-  LayoutDashboard,
-  ListChecks,
-  Mail,
-  Settings,
-  ShieldCheck,
-} from 'lucide-react';
+import { BookOpen, Inbox, LayoutDashboard, ListChecks, Settings } from 'lucide-react';
 import { cn } from '../lib/utils';
-import type { Health } from '../lib/api';
 import type { View } from '../App';
 
 const NAV_MAIN: Array<{ id: View; label: string; icon: typeof Inbox }> = [
@@ -29,25 +19,14 @@ export function Sidebar({
   pendingCount,
   open,
   onClose,
-  health,
-  apiReachable,
 }: {
   view: View;
   onNavigate: (view: View) => void;
   pendingCount: number;
   open: boolean;
   onClose: () => void;
-  health: Health | null;
-  apiReachable: boolean;
 }) {
   const activeView = view === 'detail' ? 'inbox' : view;
-  const systemStatus = !apiReachable
-    ? { label: 'API offline', dot: 'bg-red-500' }
-    : health?.mode === 'mock'
-      ? { label: 'Demo systems', dot: 'bg-amber-400' }
-      : health?.llm_available === false
-        ? { label: 'Setup needed', dot: 'bg-amber-400' }
-        : { label: 'All systems normal', dot: 'bg-emerald-500' };
 
   return (
     <>
@@ -67,27 +46,6 @@ export function Sidebar({
         )}
       >
         <div className="flex-1 overflow-y-auto px-3 py-4">
-          {/* Workspace */}
-          <button
-            type="button"
-            onClick={() => onNavigate('dashboard')}
-            className="group mb-5 flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-border bg-paper p-2.5 text-left shadow-xs transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-teal/25 focus-visible:outline-none"
-          >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-gradient-to-br from-ink to-[#34373e] text-white ring-1 ring-black/10">
-              <Mail className="h-4 w-4" strokeWidth={1.75} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[12.5px] font-semibold text-ink">
-                Support inbox
-              </span>
-              <span className="block text-[10.5px] text-faint">Mailroom workspace</span>
-            </span>
-            <ChevronsUpDown
-              className="h-3.5 w-3.5 shrink-0 text-faint transition-colors group-hover:text-muted"
-              strokeWidth={1.75}
-            />
-          </button>
-
           <p className="mb-1.5 px-2.5 text-[10px] font-semibold tracking-[0.12em] text-faint uppercase">
             Workspace
           </p>
@@ -118,29 +76,6 @@ export function Sidebar({
             ))}
           </nav>
         </div>
-
-        {/* Footer */}
-        <div className="border-t border-border/70 p-3">
-          <div className="relative overflow-hidden rounded-xl border border-teal/15 bg-gradient-to-br from-tint-teal to-white p-3.5">
-            <div className="absolute -top-6 -right-6 h-16 w-16 rounded-full bg-teal/10 blur-xl" />
-            <div className="relative flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-teal/10 text-teal ring-1 ring-teal/10 ring-inset">
-                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
-              </span>
-              <p className="text-[11.5px] font-semibold text-ink">Human in the loop</p>
-            </div>
-            <p className="relative mt-1.5 text-[11px] leading-relaxed text-muted">
-              Every AI reply waits for your approval before it leaves the mailroom.
-            </p>
-          </div>
-          <div className="mt-3 flex items-center gap-1.5 px-1">
-            <span
-              className={cn('live-dot h-1.5 w-1.5 rounded-full', systemStatus.dot)}
-            />
-            <span className="text-[10.5px] text-faint">{systemStatus.label}</span>
-            <span className="ml-auto text-[10.5px] text-faint/80">Beta</span>
-          </div>
-        </div>
       </aside>
     </>
   );
@@ -166,30 +101,20 @@ function NavItem({
       onClick={() => onNavigate(item.id)}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'group flex w-full cursor-pointer items-center gap-2.5 rounded-[9px] px-2.5 py-2 text-[13px] transition-all duration-150',
+        'flex w-full cursor-pointer items-center gap-2.5 rounded-[9px] px-2.5 py-2 text-[13px] transition-colors',
         'focus-visible:ring-2 focus-visible:ring-teal/25 focus-visible:outline-none',
         active
-          ? 'bg-paper font-medium text-ink shadow-[0_1px_2px_rgba(20,23,28,0.06)] ring-1 ring-black/[0.04]'
+          ? 'bg-paper font-medium text-ink shadow-xs ring-1 ring-black/[0.04]'
           : 'text-[#5f646b] hover:bg-black/[0.035] hover:text-ink',
       )}
     >
       <Icon
-        className={cn(
-          'h-4 w-4 shrink-0 transition-colors',
-          active ? 'text-ink' : 'text-faint group-hover:text-muted',
-        )}
+        className={cn('h-4 w-4 shrink-0', active ? 'text-ink' : 'text-faint')}
         strokeWidth={1.75}
       />
       <span className="flex-1 text-left">{item.label}</span>
       {showCount && (
-        <span
-          className={cn(
-            'rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
-            active
-              ? 'bg-tint-warning text-warning'
-              : 'bg-warning/10 text-warning',
-          )}
-        >
+        <span className="rounded-full bg-tint-warning px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-warning">
           {pendingCount}
         </span>
       )}

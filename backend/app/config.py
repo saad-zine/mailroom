@@ -106,6 +106,33 @@ class Settings:
         ).strip()
         self.my_email = os.environ.get("MY_EMAIL", "").strip()
 
+        # --- Production: Supabase auth + hosted Gmail OAuth ---
+        self.supabase_url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+        self.supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+        self.supabase_jwt_secret = os.environ.get("SUPABASE_JWT_SECRET", "").strip()
+        self.auth_enabled = bool(self.supabase_url)
+
+        self.google_client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+        self.google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
+        self.gmail_redirect_uri = os.environ.get(
+            "GMAIL_REDIRECT_URI", ""
+        ).strip()
+        self.app_url = os.environ.get("APP_URL", "").strip()
+        self.token_encryption_key = os.environ.get(
+            "MAILROOM_TOKEN_KEY", ""
+        ).strip()
+        self.pubsub_topic = os.environ.get("GMAIL_PUBSUB_TOPIC", "").strip()
+        self.pubsub_audience = os.environ.get("GMAIL_PUBSUB_AUDIENCE", "").strip()
+        self.cron_secret = os.environ.get("CRON_SECRET", "").strip()
+
+    @property
+    def gmail_oauth_configured(self) -> bool:
+        return bool(
+            self.google_client_id
+            and self.google_client_secret
+            and self.gmail_redirect_uri
+        )
+
     @property
     def mode(self) -> str:
         """Resolved mode: 'live' (default) or 'mock' (explicit demo only)."""

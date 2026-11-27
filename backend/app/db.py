@@ -88,6 +88,46 @@ CREATE TABLE IF NOT EXISTS run_steps(
     status TEXT,
     ts TEXT
 );
+CREATE TABLE IF NOT EXISTS gmail_connections(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT NOT NULL UNIQUE,
+    email_address TEXT NOT NULL,
+    refresh_token_enc TEXT NOT NULL,
+    access_token_enc TEXT,
+    access_expires_at TEXT,
+    scopes TEXT DEFAULT '',
+    history_id TEXT,
+    watch_expires_at TEXT,
+    last_sync_at TEXT,
+    status TEXT DEFAULT 'connected',
+    created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS processed_messages(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT NOT NULL,
+    provider_message_id TEXT NOT NULL,
+    thread_id TEXT,
+    created_at TEXT,
+    UNIQUE(workspace_id, provider_message_id)
+);
+CREATE TABLE IF NOT EXISTS jobs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT NOT NULL,
+    email_id INTEGER,
+    kind TEXT DEFAULT 'process_email',
+    status TEXT DEFAULT 'pending',
+    attempts INTEGER DEFAULT 0,
+    error TEXT,
+    created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS audit_logs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    actor TEXT,
+    detail TEXT,
+    created_at TEXT
+);
 """
 
 # Postgres DDL: same tables, SERIAL instead of AUTOINCREMENT. TEXT and
@@ -263,14 +303,50 @@ def connect():
         conn.close()
 
 
+TENANT_COLUMNS = {
+    "emails": [
+        ("workspace_id", "TEXT DEFAULT 'local'"),
+        ("provider_message_id", "TEXT"),
+        ("history_id", "TEXT"),
+        ("rfc_message_id", "TEXT"),
+        ("references_header", "TEXT"),
+    ],
+    "drafts": [("workspace_id", "TEXT DEFAULT 'local'")],
+    "decisions": [("workspace_id", "TEXT DEFAULT 'local'")],
+    "kb_docs": [("workspace_id", "TEXT DEFAULT 'local'")],
+    "kb_chunks": [("workspace_id", "TEXT DEFAULT 'local'")],
+    "runs": [("workspace_id", "TEXT DEFAULT 'local'")],
+    "run_steps": [("workspace_id", "TEXT DEFAULT 'local'")],
+}
+
+
+def _add_column(conn, table: str, name: str, definition: str) -> None:
+    if use_postgres():
+        conn.execute(
+            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {name} {definition}"
+        )
+        return
+    try:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+    except sqlite3.OperationalError as exc:
+        if "duplicate column" not in str(exc).lower():
+            raise
+
+
 def init_db() -> None:
     if use_postgres():
         with connect() as conn:
             conn.executescript(SCHEMA_PG)
+            for table, columns in TENANT_COLUMNS.items():
+                for name, definition in columns:
+                    _add_column(conn, table, name, definition)
         return
     db_path().parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         conn.executescript(SCHEMA)
+        for table, columns in TENANT_COLUMNS.items():
+            for name, definition in columns:
+                _add_column(conn, table, name, definition)
 
 
 def row_to_dict(row):

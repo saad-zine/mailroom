@@ -551,7 +551,6 @@ export function EmptyState({
   title,
   subtitle,
   action,
-  art = 'inbox',
   className,
 }: {
   title: string;
@@ -563,12 +562,11 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center px-6 py-12 text-center',
+        'flex flex-col items-center justify-center px-6 py-10 text-center',
         className,
       )}
     >
-      <EmptyArt variant={art} />
-      <p className="mt-3 text-[14px] font-semibold tracking-[-0.01em] text-ink">{title}</p>
+      <p className="text-[14px] font-semibold tracking-[-0.01em] text-ink">{title}</p>
       {subtitle && (
         <p className="mt-1 max-w-sm text-[12.5px] leading-relaxed text-muted">{subtitle}</p>
       )}
