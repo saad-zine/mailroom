@@ -156,12 +156,13 @@ export default function Landing() {
 
       <section className="lp-hero" id="top">
         <div className="lp-hero-inner">
+          <div className="lp-hero-index"><span>THE AI EMAIL COPILOT</span><span>EST. FOR BETTER WORK &nbsp; / &nbsp; 001</span></div>
           <span className="lp-pill">
             <span className="lp-pill-text">
               <b>Private by default.</b> Read &amp; draft access only
             </span>
             <span className="lp-pill-badge" aria-hidden="true">
-              <BotMark size={14} fg="#ffffff" bg="#1a1a1a" />
+              <BotMark size={14} fg="#f4c83d" bg="#1735a5" />
             </span>
           </span>
 
@@ -169,7 +170,7 @@ export default function Landing() {
             <Word i={0}>Your</Word>{' '}
             <Word i={1}>inbox,</Word>{' '}
             <span className="lp-word lp-bot-inline" style={{ '--i': 2 } as CSSProperties}>
-              <BotMark size="100%" animated gradient />
+              <BotMark size="100%" fg="#ed443b" bg="#ffffff" animated />
             </span>{' '}
             <Word i={3}>handled.</Word>
           </h1>
@@ -214,12 +215,12 @@ export default function Landing() {
               loop
               playsInline
               preload="metadata"
-              aria-label="Mailroom product walkthrough: an email arrives, a sourced reply is drafted, and the draft is saved only after approval."
+              aria-label="An animated introduction to the Mailroom workflow."
             />
           </div>
           <div className="lp-demo-caption">
-            <span>Product walkthrough — rendered with Remotion</span>
-            <span>Mailroom / 00:12</span>
+            <span>A little more room for the work that matters</span>
+            <span>MAILROOM / IN MOTION</span>
           </div>
         </div>
       </section>
@@ -383,10 +384,9 @@ export default function Landing() {
             <span className="lp-word lp-bot-inline" style={{ '--i': 2 } as CSSProperties}>
               <BotMark
                 size="100%"
-                bg="#050505"
+                fg="#f4c83d"
+                bg="#1735a5"
                 animated
-                gradient
-                gradientColors={['#EA4045', '#F6C945', '#3C82F6', '#FFFFFF']}
               />
             </span>{' '}
             <Word i={3}>mailroom.</Word>
