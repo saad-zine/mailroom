@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase, storeToken } from '../lib/supabase';
-import { BotMark } from '../landing/GrokBot';
+import { BrandMark } from '../landing/BrandMark';
 import { Button, Card, PageHeader } from './ui';
 
 export function Auth({ onSignedIn }: { onSignedIn: () => void }) {
@@ -45,7 +45,7 @@ export function Auth({ onSignedIn }: { onSignedIn: () => void }) {
           href="/"
           className="inline-flex items-center gap-2 font-mono text-[9.5px] tracking-[0.22em] text-faint uppercase transition-colors hover:text-ink"
         >
-          <BotMark size={16} fg="#0f7a6d" bg="#f3f3f0" />
+          <BrandMark size={16} className="text-teal" />
           Mailroom
         </a>
         <PageHeader

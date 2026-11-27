@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { BrandMark } from './BrandMark';
 import { BotMark } from './GrokBot';
 import './landing.css';
 
@@ -125,7 +126,7 @@ export default function Landing() {
     <div className="lp">
       <nav className={`lp-nav${solid ? ' is-solid' : ''}`} aria-label="Main">
         <a className="lp-brand" href="#top" aria-label="Mailroom home">
-          <BotMark size={22} fg="#ffffff" bg="#0a0a0a" />
+          <BrandMark size={22} />
           <span className="lp-brand-word">Mailroom</span>
         </a>
 
@@ -142,7 +143,7 @@ export default function Landing() {
             Sign in
           </a>
           <a className="lp-btn lp-btn-solid" href="/app">
-            Open Mailroom
+            Start automating
             <Arrow />
           </a>
         </div>
@@ -174,8 +175,8 @@ export default function Landing() {
 
           <div className="lp-hero-actions">
             <a className="lp-btn lp-btn-solid lp-btn-lg" href="/app">
-              Open Mailroom
-              <Arrow />
+              <BrandMark size={18} strokeWidth={4.5} />
+              Start automating
             </a>
             <a className="lp-btn lp-btn-card lp-btn-lg" href="#how">
               How it works
@@ -263,7 +264,7 @@ export default function Landing() {
                   yours.
                 </p>
                 <a className="lp-btn lp-btn-solid" href="/app">
-                  Open Mailroom
+                  Start automating
                   <Arrow />
                 </a>
               </div>
@@ -317,7 +318,7 @@ export default function Landing() {
             your decision.
           </p>
           <a className="lp-btn lp-btn-solid lp-btn-lg" href="/app">
-            Open Mailroom
+            Start automating
             <Arrow />
           </a>
         </div>
@@ -326,7 +327,7 @@ export default function Landing() {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <span className="lp-footer-brand">
-            <BotMark size={18} fg="#ffffff" bg="#050505" />
+            <BrandMark size={18} />
             Mailroom
           </span>
           <div className="lp-footer-links">
