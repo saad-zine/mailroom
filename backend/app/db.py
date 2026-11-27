@@ -333,6 +333,32 @@ def _add_column(conn, table: str, name: str, definition: str) -> None:
             raise
 
 
+def _apply_rls(conn) -> None:
+    """Defence in depth for Supabase: anon clients can only see their workspace.
+
+    The app itself connects with DATABASE_URL (a privileged role), so RLS
+    never blocks server-side work. Skipped for plain Postgres without
+    Supabase's auth.uid().
+    """
+    if not settings.auth_enabled:
+        return
+    tables = list(TENANT_COLUMNS) + [
+        "gmail_connections", "processed_messages", "jobs", "audit_logs"
+    ]
+    for table in tables:
+        try:
+            conn.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+            conn.execute(f"DROP POLICY IF EXISTS tenant_isolation ON {table}")
+            conn.execute(
+                f"CREATE POLICY tenant_isolation ON {table} "
+                "USING (workspace_id = auth.uid()::text) "
+                "WITH CHECK (workspace_id = auth.uid()::text)"
+            )
+        except Exception as exc:
+            print(f"[db] RLS skipped for {table}: {exc}")
+            return
+
+
 def init_db() -> None:
     if use_postgres():
         with connect() as conn:
@@ -340,6 +366,7 @@ def init_db() -> None:
             for table, columns in TENANT_COLUMNS.items():
                 for name, definition in columns:
                     _add_column(conn, table, name, definition)
+            _apply_rls(conn)
         return
     db_path().parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:

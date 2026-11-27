@@ -22,7 +22,11 @@ and the demo (`MAILROOM_MODE=mock`) still work with none of these variables set.
 | `VITE_SUPABASE_ANON_KEY` | Vercel | Frontend auth. |
 
 The authenticated user's Supabase `sub` is the workspace id. Every row in
-`emails`, `drafts`, `decisions`, `kb_*`, `runs`, and `run_steps` is scoped to it.
+`emails`, `drafts`, `decisions`, `kb_*`, `runs`, and `run_steps` is scoped to it
+in every API query. On startup against Postgres with `SUPABASE_URL` set, the app
+also enables Row Level Security and creates a `tenant_isolation` policy on all
+tenant tables using `auth.uid()::text = workspace_id`. Keep RLS enabled in the
+Supabase dashboard — direct anon access must never bypass the app's scoping.
 
 ## 2. Google Cloud / Gmail
 
