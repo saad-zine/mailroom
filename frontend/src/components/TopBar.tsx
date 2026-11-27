@@ -1,4 +1,4 @@
-import { FlaskConical, Home, MailWarning } from 'lucide-react';
+import { FlaskConical, MailWarning } from 'lucide-react';
 import type { Health } from '../lib/api';
 import type { View } from '../App';
 import { Badge } from './ui';
@@ -22,12 +22,8 @@ export function TopBar({
   apiReachable: boolean;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-paper px-6">
-      <div className="flex items-center gap-2 text-sm">
-        <Home className="h-4 w-4 text-muted" strokeWidth={1.5} />
-        <span className="text-muted">/</span>
-        <span className="font-medium text-ink">{VIEW_TITLES[view]}</span>
-      </div>
+    <header className="topbar">
+      <div className="topbar-path"><span>WORKSPACE</span><span className="topbar-slash">/</span><strong>{VIEW_TITLES[view]}</strong></div>
       <div className="flex items-center gap-2">
         {!apiReachable ? (
           <Badge tone="error">

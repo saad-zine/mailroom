@@ -126,7 +126,7 @@ export function Inbox({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
               key={e.id}
               type="button"
               onClick={() => onOpenEmail(e.id)}
-              className="flex w-full cursor-pointer items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-wash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal/30"
+              className="mail-row flex w-full cursor-pointer items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-wash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal/30"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-tint text-xs font-semibold text-body">
                 {initials(e.sender)}
