@@ -214,17 +214,6 @@
   color: var(--ink);
 }
 
-.lp-pill-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  flex: none;
-}
-
 .lp-h1 {
   font-family: var(--font-sans);
   font-weight: 500;
@@ -273,7 +262,7 @@
   animation: lp-soft-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
 }
 
-/* the nine tinted heads, straight from the bot row on x.ai */
+/* Product walkthrough video */
 .lp-demo-wrap {
   width: 100%;
   max-width: 64rem;
@@ -297,19 +286,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.lp-demo-caption {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 12px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-48);
 }
 
 /* ---------------------------------------------------------------- sections */
@@ -545,9 +521,9 @@
   gap: 14px 24px;
   max-width: 80rem;
   margin: 0 auto;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  letter-spacing: 0;
   color: var(--ink-48);
 }
 
@@ -564,16 +540,24 @@
 
 .lp-footer-links {
   display: flex;
+  align-items: center;
   gap: 24px;
 }
 
-.lp-footer-inner a {
+.lp-footer-inner a,
+.lp-footer-links button {
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: inherit;
+  font: inherit;
   text-decoration: none;
+  cursor: pointer;
   transition: color 0.2s ease;
 }
 
-.lp-footer-inner a:hover {
+.lp-footer-inner a:hover,
+.lp-footer-links button:hover {
   color: var(--ink);
 }
 
@@ -675,19 +659,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-family: var(--font-sans);
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-48);
+  letter-spacing: -0.01em;
+  color: var(--ink-86);
 }
 
 .lp-detail-label::before {
   content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 1px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   background: var(--ink-48);
   flex: none;
 }
@@ -738,9 +721,13 @@
   color: var(--ink-64);
 }
 
-.lp-form-card {
+.lp-start-card {
+  display: flex;
   width: 100%;
-  max-width: 24rem;
+  max-width: 25rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
   margin-left: auto;
   padding: clamp(24px, 3vw, 32px);
   border: 1px solid var(--rule-soft);
@@ -748,87 +735,214 @@
   background: var(--card);
 }
 
-.lp-form-card h3 {
-  margin: 0 0 6px;
-  font-family: var(--font-sans);
+.lp-start-card h3 {
   font-size: 20px;
   font-weight: 500;
   letter-spacing: -0.2px;
 }
 
-.lp-form-note {
-  margin: 0 0 20px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ink-48);
+.lp-start-card p {
+  margin-bottom: 8px;
+  color: var(--ink-64);
+  font-size: 14px;
+  line-height: 1.55;
 }
 
-.lp-form-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.lp-dialog {
+  position: fixed;
+  width: min(100% - 32px, 440px);
+  max-height: min(90dvh, 760px);
+  overflow-y: auto;
+  margin: auto;
+  padding: clamp(26px, 5vw, 38px);
+  border: 1px solid var(--rule);
+  border-radius: 24px;
+  background: #121212;
+  color: var(--ink);
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.6);
 }
 
-.lp-form-fields label {
-  display: flex;
-  flex-direction: column;
+.lp-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.lp-dialog[open] {
+  animation: lp-dialog-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lp-dialog-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--rule-soft);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-64);
+  cursor: pointer;
+}
+
+.lp-dialog-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
+.lp-dialog > .lp-eyebrow {
+  margin-bottom: 10px;
+}
+
+.lp-dialog h2 {
+  max-width: 14ch;
+  font-size: clamp(26px, 5vw, 34px);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+.lp-dialog-copy {
+  margin-top: 12px !important;
+  color: var(--ink-64);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.lp-dialog-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.lp-dialog-form label {
+  display: grid;
   gap: 7px;
-}
-
-.lp-form-fields label span {
+  color: var(--ink-64);
   font-size: 12px;
   font-weight: 500;
-  color: var(--ink-64);
 }
 
-.lp-form-fields input {
-  height: 44px;
+.lp-dialog-form input {
   width: 100%;
+  height: 46px;
   padding: 0 14px;
   border: 1px solid var(--rule);
   border-radius: 12px;
-  background: #101010;
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 14px;
   outline: none;
-  transition: border-color 0.2s ease;
+  background: #0a0a0a;
+  color: var(--ink);
+  font: 400 14px/1 var(--font-sans);
 }
 
-.lp-form-fields input::placeholder {
+.lp-dialog-form input::placeholder {
   color: var(--ink-48);
 }
 
-.lp-form-fields input:focus {
-  border-color: rgba(255, 255, 255, 0.4);
+.lp-dialog-form input:focus-visible {
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
-.lp-form-submit {
-  height: 44px;
+.lp-dialog-submit {
   width: 100%;
-  margin-top: 20px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--field);
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 500;
-  transition: opacity 0.2s ease;
+  margin-top: 4px;
 }
 
-.lp-form-submit:hover {
-  opacity: 0.88;
-}
-
-.lp-form-foot {
-  margin: 14px 0 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+.lp-dialog-switch {
+  margin-top: 18px !important;
   color: var(--ink-48);
+  font-size: 13px;
   text-align: center;
+}
+
+.lp-dialog-switch button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.lp-pricing-dialog {
+  width: min(100% - 32px, 760px);
+}
+
+.lp-pricing-dialog h2 {
+  max-width: none;
+}
+
+.lp-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.lp-pricing-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 22px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.lp-pricing-card.is-featured {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.lp-pricing-name {
+  color: var(--ink-48);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lp-pricing-card h3 {
+  margin-top: 8px;
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.lp-pricing-card p {
+  min-height: 44px;
+  margin-top: 8px;
+  color: var(--ink-64);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lp-pricing-card ul {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  margin: 18px 0 22px;
+  padding: 0;
+  color: var(--ink-86);
+  font-size: 12px;
+  list-style: none;
+}
+
+.lp-pricing-card li::before {
+  content: '•';
+  margin-right: 9px;
+  color: var(--ink-48);
+}
+
+.lp-pricing-card .lp-btn {
+  margin-top: auto;
+}
+
+@keyframes lp-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ---------------------------------------------------------------- gradient head */
@@ -899,7 +1013,7 @@
     grid-template-columns: 1fr;
   }
 
-  .lp-form-card {
+  .lp-start-card {
     margin-left: 0;
   }
 
@@ -954,6 +1068,10 @@
 }
 
 @media (max-width: 520px) {
+  .lp-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
   .lp-nav-actions .lp-btn {
     height: 34px;
     padding: 0 14px;

@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react';
-import { BrandMark } from '../landing/BrandMark';
 import { signInDemo } from '../lib/demoAuth';
 
 export function Auth({ onSignedIn }: { onSignedIn: () => void }) {
@@ -17,10 +16,13 @@ export function Auth({ onSignedIn }: { onSignedIn: () => void }) {
     <div className="auth-page">
       <header className="auth-header">
         <a href="/" className="auth-brand" aria-label="Mailroom home">
-          <BrandMark size={26} />
-          <span>Mailroom</span>
+          <img
+            src="/mailroom-wordmark.png"
+            alt="Mailroom"
+            className="h-[19px] w-[108px] object-contain"
+          />
         </a>
-        <span className="auth-context">You are signing into Mailroom</span>
+        <a className="auth-context" href="/">Back to Mailroom</a>
       </header>
 
       <main className="auth-main">

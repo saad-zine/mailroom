@@ -16,11 +16,11 @@ type ButtonSize = 'sm' | 'md' | 'lg';
 
 const buttonVariants: Record<ButtonVariant, string> = {
   primary:
-    'border border-black/10 bg-ink text-white shadow-[0_1px_2px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-black active:translate-y-px focus-visible:ring-ink/25',
+    'border border-white/10 bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.18)] hover:bg-white/90 active:translate-y-px focus-visible:ring-white/25',
   secondary:
     'border border-border bg-paper text-ink shadow-xs hover:border-border-strong hover:bg-wash active:translate-y-px focus-visible:ring-teal/25',
   ghost:
-    'border border-transparent bg-transparent text-muted hover:bg-black/[0.045] hover:text-ink focus-visible:ring-teal/25',
+    'border border-transparent bg-transparent text-muted hover:bg-white/[0.06] hover:text-ink focus-visible:ring-teal/25',
   destructive:
     'border border-error/15 bg-paper text-error shadow-xs hover:border-error/25 hover:bg-tint-error focus-visible:ring-error/20',
   danger:
@@ -79,7 +79,7 @@ const badgeTones: Record<BadgeTone, string> = {
   warning: 'bg-tint-warning text-warning ring-warning/10',
   error: 'bg-tint-error text-error ring-error/10',
   info: 'bg-tint-info text-info ring-info/10',
-  neutral: 'bg-neutral-tint text-[#5b6068] ring-black/[0.03]',
+  neutral: 'bg-neutral-tint text-muted ring-white/[0.06]',
 };
 
 export function Badge({
@@ -244,7 +244,7 @@ export function FilterChip({
         'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium whitespace-nowrap transition-all duration-150',
         'focus-visible:ring-2 focus-visible:ring-teal/25 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas focus-visible:outline-none',
         active
-          ? 'border-ink bg-ink text-white shadow-xs'
+          ? 'border-white bg-white text-[#0a0a0a] shadow-xs'
           : 'border-border bg-paper text-body hover:border-border-strong hover:bg-wash',
       )}
     >
@@ -253,7 +253,7 @@ export function FilterChip({
         <span
           className={cn(
             'text-[10.5px] tabular-nums',
-            active ? 'text-white/55' : 'text-faint',
+            active ? 'text-[#0a0a0a]/60' : 'text-faint',
           )}
         >
           {count}
@@ -378,7 +378,7 @@ const iconTones: Record<IconTone, string> = {
   rose: 'bg-tint-error text-error ring-error/10',
   green: 'bg-tint-success text-success ring-success/10',
   neutral: 'bg-neutral-tint text-muted ring-black/[0.03]',
-  ink: 'bg-ink text-white ring-white/10',
+  ink: 'bg-white text-[#0a0a0a] ring-white/10',
 };
 
 const iconSizes = {
@@ -613,7 +613,7 @@ export function Modal({
 }) {
   return (
     <div
-      className="animate-fade fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/35 p-4 pt-[10vh] backdrop-blur-[3px]"
+      className="animate-fade fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-[10vh] backdrop-blur-[3px]"
       onClick={onClose}
       role="presentation"
     >

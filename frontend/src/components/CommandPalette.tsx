@@ -173,7 +173,7 @@ export function CommandPalette({
 
   return (
     <div
-      className="animate-fade fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/30 p-4 pt-[10vh] backdrop-blur-[3px] sm:pt-[14vh]"
+      className="animate-fade fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-[10vh] backdrop-blur-[3px] sm:pt-[14vh]"
       onClick={onClose}
       role="presentation"
     >

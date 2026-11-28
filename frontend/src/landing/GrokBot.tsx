@@ -1,10 +1,7 @@
 import { useEffect, useId, useRef, type CSSProperties } from 'react';
 
 /**
- * GrokBot — the x.ai bot head: one round shell with two slanted eyes cut
- * out of it. The head is the published mark; the eyes are the real poses
- * from the animated x.ai/bot hero, so they read correctly at small sizes.
- * The eyes can still blink, wander, and look at the cursor.
+ * A static round mascot with cursor-tracking eyes and bright line accents.
  */
 
 const HEAD =
@@ -51,82 +48,44 @@ export function BotMark({
   const gradientId = `bot-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   useEffect(() => {
-    if (!animated) return;
-    const a = eyeLeft.current;
-    const b = eyeRight.current;
+    if (!animated || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const leftEye = eyeLeft.current;
+    const rightEye = eyeRight.current;
     const svg = svgRef.current;
-    if (!a || !b || !svg) return;
+    if (!leftEye || !rightEye || !svg) return;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let pointerX = 0;
+    let pointerY = 0;
+    let gazeX = 0;
+    let gazeY = 0;
+    let previous = performance.now();
+    let frame = 0;
 
-    let px = 0;
-    let py = 0;
-    let hasPointer = false;
-    const onMove = (event: PointerEvent) => {
-      // Track the cursor across the whole page, not just this little mark.
-      px = (event.clientX / window.innerWidth - 0.5) * 2;
-      py = (event.clientY / window.innerHeight - 0.5) * 2;
-      hasPointer = true;
-    };
-    window.addEventListener('pointermove', onMove, { passive: true });
-
-    let raf = 0;
-    let last = performance.now();
-    let gx = 0;
-    let gy = 0;
-    let blinkStart = -1;
-    let nextBlink = last + 2400 + Math.random() * 1800;
-
-    const tick = (now: number) => {
-      const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
-      last = now;
-      const t = now / 1000;
-
-      const idleX = Math.sin(t * 0.43) * 0.6 + Math.sin(t * 0.19 + 1.7) * 0.25;
-      const idleY = Math.sin(t * 0.31 + 1.2) * 0.4;
-      const tx = hasPointer ? Math.max(-1, Math.min(1, px)) : idleX;
-      const ty = hasPointer ? Math.max(-1, Math.min(1, py)) : idleY;
-
-      const k = 1 - Math.exp(-7.5 * dt);
-      gx += (tx - gx) * k;
-      gy += (ty - gy) * k;
-
-      if (blinkStart < 0 && now > nextBlink) {
-        blinkStart = now;
-        nextBlink = now + 2600 + Math.random() * 2800;
-      }
-      let blink = 0;
-      if (blinkStart >= 0) {
-        const e = now - blinkStart;
-        if (e < 70) blink = e / 70;
-        else if (e < 190) blink = 1 - (e - 70) / 120;
-        else blinkStart = -1;
-      }
-      const open = 1 - 0.92 * blink;
-
-      const breathe = Math.sin(t * 0.62);
-      const pop = Math.pow(Math.max(0, Math.sin(t * 0.29 + 0.4)), 8);
-      const leftScale = 1 + 0.03 * breathe;
-      const rightScale = 1 - 0.04 * breathe + 0.18 * pop;
-
-      // Turn the whole shell toward the cursor, then lead with the eyes.
-      // Values are in the 92-space the eye paths use; the parent group
-      // scales them up to the head.
-      svg.style.transform = `perspective(420px) rotateY(${gx * 16}deg) rotateX(${-gy * 12}deg)`;
-      const dx = gx * 2.6;
-      const dy = gy * 2.1;
-      const tilt = gx * 3;
-
-      a.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${leftScale}, ${open})`;
-      b.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${rightScale}, ${open})`;
-
-      raf = requestAnimationFrame(tick);
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = svg.getBoundingClientRect();
+      pointerX = Math.max(-1, Math.min(1, (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2)));
+      pointerY = Math.max(-1, Math.min(1, (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2)));
     };
 
-    raf = requestAnimationFrame(tick);
+    const followPointer = (now: number) => {
+      const delta = Math.min(0.05, Math.max(0.001, (now - previous) / 1000));
+      previous = now;
+      const easing = 1 - Math.exp(-10 * delta);
+      gazeX += (pointerX - gazeX) * easing;
+      gazeY += (pointerY - gazeY) * easing;
+
+      const dx = gazeX * 7;
+      const dy = gazeY * 5.5;
+      leftEye.style.transform = `translate(${dx}px, ${dy}px)`;
+      rightEye.style.transform = `translate(${dx}px, ${dy}px)`;
+      frame = requestAnimationFrame(followPointer);
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    frame = requestAnimationFrame(followPointer);
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(frame);
+      window.removeEventListener('pointermove', onPointerMove);
     };
   }, [animated]);
 
@@ -137,7 +96,7 @@ export function BotMark({
       width={size}
       height={size}
       className={className}
-      style={{ ...style, transformOrigin: 'center', willChange: 'transform' }}
+      style={style}
       role={title ? 'img' : undefined}
       aria-hidden={title ? undefined : true}
       focusable="false"
