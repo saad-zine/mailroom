@@ -331,6 +331,19 @@ export default function Landing() {
           ))}
         </div>
 
+        <div className="lp-demo-wrap" data-reveal>
+          <div className="lp-demo">
+            <video
+              src="/mailroom-demo.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label="Mailroom demo showing an email, its source-backed reply, and approval before saving the draft."
+            />
+          </div>
+        </div>
       </section>
 
       <main className="lp-main">
