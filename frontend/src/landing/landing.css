@@ -245,15 +245,6 @@
   height: 100%;
 }
 
-.lp-cursor-buddy {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  will-change: transform;
-}
-
 .lp-hero-sub {
   max-width: 40rem;
   font-size: 18px;

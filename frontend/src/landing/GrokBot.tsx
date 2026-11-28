@@ -1,10 +1,7 @@
 import { useEffect, useId, useRef, type CSSProperties } from 'react';
 
 /**
- * GrokBot — the x.ai bot head: one round shell with two slanted eyes cut
- * out of it. The head is the published mark; the eyes are the real poses
- * from the animated x.ai/bot hero, so they read correctly at small sizes.
- * The eyes can still blink, wander, and look at the cursor.
+ * A static round mascot with cursor-tracking eyes and an optional cap.
  */
 
 const HEAD =
@@ -30,7 +27,7 @@ type BotMarkProps = {
   /** Palette for that gradient. */
   gradientColors?: string[];
   title?: string;
-  scarf?: boolean;
+  cap?: boolean;
   className?: string;
   style?: CSSProperties;
 };
@@ -43,7 +40,7 @@ export function BotMark({
   gradient = false,
   gradientColors = ['#F19D38', '#EA4045', '#885CF5', '#3C82F6'],
   title,
-  scarf = false,
+  cap = false,
   className,
   style,
 }: BotMarkProps) {
@@ -53,82 +50,44 @@ export function BotMark({
   const gradientId = `bot-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   useEffect(() => {
-    if (!animated) return;
-    const a = eyeLeft.current;
-    const b = eyeRight.current;
+    if (!animated || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const leftEye = eyeLeft.current;
+    const rightEye = eyeRight.current;
     const svg = svgRef.current;
-    if (!a || !b || !svg) return;
+    if (!leftEye || !rightEye || !svg) return;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let pointerX = 0;
+    let pointerY = 0;
+    let gazeX = 0;
+    let gazeY = 0;
+    let previous = performance.now();
+    let frame = 0;
 
-    let px = 0;
-    let py = 0;
-    let hasPointer = false;
-    const onMove = (event: PointerEvent) => {
-      // Track the cursor across the whole page, not just this little mark.
-      px = (event.clientX / window.innerWidth - 0.5) * 2;
-      py = (event.clientY / window.innerHeight - 0.5) * 2;
-      hasPointer = true;
-    };
-    window.addEventListener('pointermove', onMove, { passive: true });
-
-    let raf = 0;
-    let last = performance.now();
-    let gx = 0;
-    let gy = 0;
-    let blinkStart = -1;
-    let nextBlink = last + 2400 + Math.random() * 1800;
-
-    const tick = (now: number) => {
-      const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
-      last = now;
-      const t = now / 1000;
-
-      const idleX = Math.sin(t * 0.43) * 0.6 + Math.sin(t * 0.19 + 1.7) * 0.25;
-      const idleY = Math.sin(t * 0.31 + 1.2) * 0.4;
-      const tx = hasPointer ? Math.max(-1, Math.min(1, px)) : idleX;
-      const ty = hasPointer ? Math.max(-1, Math.min(1, py)) : idleY;
-
-      const k = 1 - Math.exp(-7.5 * dt);
-      gx += (tx - gx) * k;
-      gy += (ty - gy) * k;
-
-      if (blinkStart < 0 && now > nextBlink) {
-        blinkStart = now;
-        nextBlink = now + 2600 + Math.random() * 2800;
-      }
-      let blink = 0;
-      if (blinkStart >= 0) {
-        const e = now - blinkStart;
-        if (e < 70) blink = e / 70;
-        else if (e < 190) blink = 1 - (e - 70) / 120;
-        else blinkStart = -1;
-      }
-      const open = 1 - 0.92 * blink;
-
-      const breathe = Math.sin(t * 0.62);
-      const pop = Math.pow(Math.max(0, Math.sin(t * 0.29 + 0.4)), 8);
-      const leftScale = 1 + 0.03 * breathe;
-      const rightScale = 1 - 0.04 * breathe + 0.18 * pop;
-
-      // Turn the whole shell toward the cursor, then lead with the eyes.
-      // Values are in the 92-space the eye paths use; the parent group
-      // scales them up to the head.
-      svg.style.transform = `perspective(420px) rotateY(${gx * 16}deg) rotateX(${-gy * 12}deg)`;
-      const dx = gx * 2.6;
-      const dy = gy * 2.1;
-      const tilt = gx * 3;
-
-      a.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${leftScale}, ${open})`;
-      b.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${rightScale}, ${open})`;
-
-      raf = requestAnimationFrame(tick);
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = svg.getBoundingClientRect();
+      pointerX = Math.max(-1, Math.min(1, (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2)));
+      pointerY = Math.max(-1, Math.min(1, (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2)));
     };
 
-    raf = requestAnimationFrame(tick);
+    const followPointer = (now: number) => {
+      const delta = Math.min(0.05, Math.max(0.001, (now - previous) / 1000));
+      previous = now;
+      const easing = 1 - Math.exp(-10 * delta);
+      gazeX += (pointerX - gazeX) * easing;
+      gazeY += (pointerY - gazeY) * easing;
+
+      const dx = gazeX * 2;
+      const dy = gazeY * 1.7;
+      leftEye.style.transform = `translate(${dx}px, ${dy}px)`;
+      rightEye.style.transform = `translate(${dx}px, ${dy}px)`;
+      frame = requestAnimationFrame(followPointer);
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    frame = requestAnimationFrame(followPointer);
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(frame);
+      window.removeEventListener('pointermove', onPointerMove);
     };
   }, [animated]);
 
@@ -139,7 +98,7 @@ export function BotMark({
       width={size}
       height={size}
       className={className}
-      style={{ ...style, transformOrigin: 'center', willChange: 'transform' }}
+      style={style}
       role={title ? 'img' : undefined}
       aria-hidden={title ? undefined : true}
       focusable="false"
@@ -168,88 +127,14 @@ export function BotMark({
           <path d={EYE_RIGHT} fill={bg} />
         </g>
       </g>
-      {scarf && (
+      {cap && (
         <g aria-hidden="true">
-          <path d="M12 63c15 7 31 8 47 3 9-3 17-7 25-12l4 10c-8 8-19 14-31 17-17 4-33 3-48-4z" fill="#e3343c" />
-          <path d="M67 71c8-3 15-7 21-12l4 22c-6 6-14 8-22 5z" fill="#c9232c" />
-          <path d="M20 70c15 6 28 6 42 2" fill="none" stroke="#ff7478" strokeWidth="2" strokeLinecap="round" opacity=".7" />
+          <path d="M24 22c1-11 12-18 26-18s25 7 26 18H24Z" fill="#e3343c" />
+          <path d="M18 21c16-4 48-4 66 0 4 1 5 3 1 5-16 6-49 7-67 1-5-1-5-4 0-6Z" fill="#c9232c" />
+          <path d="M42 7c-2 4-2 9-1 13" fill="none" stroke="#ff7478" strokeWidth="2" strokeLinecap="round" opacity=".8" />
         </g>
       )}
     </svg>
-  );
-}
-
-export function CursorBuddy({
-  size = '1em',
-  className,
-}: {
-  size?: number | string;
-  className?: string;
-}) {
-  const buddyRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const buddy = buddyRef.current;
-    if (!buddy || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    let pointerX = -1000;
-    let pointerY = -1000;
-    let currentX = 0;
-    let currentY = 0;
-    let hopX = 0;
-    let hopY = 0;
-    let hopUntil = 0;
-    let lastHop = 0;
-    let previous = performance.now();
-    let frame = 0;
-
-    const onPointerMove = (event: PointerEvent) => {
-      pointerX = event.clientX;
-      pointerY = event.clientY;
-    };
-
-    const animate = (now: number) => {
-      const rect = buddy.getBoundingClientRect();
-      const dx = pointerX - (rect.left + rect.width / 2);
-      const dy = pointerY - (rect.top + rect.height / 2);
-      const close = Math.abs(dx) < 150 && Math.abs(dy) < 100;
-
-      if (close && now - lastHop > 2600 && Math.hypot(dx, dy) < 115) {
-        hopX = dx >= 0 ? -54 : 54;
-        hopY = -25;
-        hopUntil = now + 480;
-        lastHop = now;
-      }
-
-      const hopActive = now < hopUntil;
-      const targetX = (close ? Math.max(-1, Math.min(1, dx / 130)) * 8 : 0) + (hopActive ? hopX : 0);
-      const targetY = (close ? Math.max(-1, Math.min(1, dy / 100)) * 5 : 0) + (hopActive ? hopY : 0);
-      const factor = 1 - Math.exp(-9 * ((now - previous) / 1000));
-      previous = now;
-      currentX += (targetX - currentX) * factor;
-      currentY += (targetY - currentY) * factor;
-      buddy.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
-
-      frame = requestAnimationFrame(animate);
-    };
-
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    frame = requestAnimationFrame(animate);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('pointermove', onPointerMove);
-    };
-  }, []);
-
-  return (
-    <span
-      ref={buddyRef}
-      className={`lp-cursor-buddy ${className ?? ''}`}
-      style={{ width: size, height: size }}
-      aria-hidden="true"
-    >
-      <BotMark size="100%" fg="#ffffff" bg="#0a0a0a" animated scarf />
-    </span>
   );
 }
 

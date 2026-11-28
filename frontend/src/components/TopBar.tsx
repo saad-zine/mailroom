@@ -1,4 +1,4 @@
-import { Bell, CircleUserRound, Mail, Menu, Search } from 'lucide-react';
+import { Bell, CircleUserRound, Menu, Search } from 'lucide-react';
 import type { View } from '../App';
 import { Kbd } from './ui';
 
@@ -32,8 +32,11 @@ export function TopBar({
         className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-lg focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:outline-none"
         aria-label="Mailroom home"
       >
-        <Mail className="h-[18px] w-[18px] shrink-0 text-white" strokeWidth={1.7} />
-        <span className="text-[14px] font-medium tracking-[-0.02em] text-white">Mailroom</span>
+        <img
+          src="/mailroom-wordmark.png"
+          alt="Mailroom"
+          className="h-[18px] w-[102px] shrink-0 object-contain"
+        />
       </button>
 
       <div className="flex min-w-0 flex-1 justify-center px-1 sm:px-4">
