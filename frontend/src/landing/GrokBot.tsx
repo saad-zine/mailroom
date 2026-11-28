@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, type CSSProperties } from 'react';
 
 /**
- * A static round mascot with cursor-tracking eyes and an optional cap.
+ * A static round mascot with cursor-tracking eyes and bright line accents.
  */
 
 const HEAD =
@@ -27,7 +27,6 @@ type BotMarkProps = {
   /** Palette for that gradient. */
   gradientColors?: string[];
   title?: string;
-  cap?: boolean;
   className?: string;
   style?: CSSProperties;
 };
@@ -40,7 +39,6 @@ export function BotMark({
   gradient = false,
   gradientColors = ['#F19D38', '#EA4045', '#885CF5', '#3C82F6'],
   title,
-  cap = false,
   className,
   style,
 }: BotMarkProps) {
@@ -118,7 +116,7 @@ export function BotMark({
           </linearGradient>
         </defs>
       ) : null}
-      <path d={HEAD} fill={gradient ? `url(#${gradientId})` : fg} />
+      <path d={HEAD} fill={gradient ? `url(#${gradientId})` : fg} stroke="#ffffff" strokeWidth="1.5" />
       <g transform={EYE_TRANSFORM}>
         <g ref={eyeLeft} className="grok-eye">
           <path d={EYE_LEFT} fill={bg} />
@@ -127,13 +125,11 @@ export function BotMark({
           <path d={EYE_RIGHT} fill={bg} />
         </g>
       </g>
-      {cap && (
-        <g aria-hidden="true">
-          <path d="M24 22c1-11 12-18 26-18s25 7 26 18H24Z" fill="#e3343c" />
-          <path d="M18 21c16-4 48-4 66 0 4 1 5 3 1 5-16 6-49 7-67 1-5-1-5-4 0-6Z" fill="#c9232c" />
-          <path d="M42 7c-2 4-2 9-1 13" fill="none" stroke="#ff7478" strokeWidth="2" strokeLinecap="round" opacity=".8" />
-        </g>
-      )}
+      <g aria-hidden="true" fill="none" strokeWidth="5" strokeLinecap="round">
+        <path d="M20 65h18" stroke="#3c82f6" />
+        <path d="M41 65h18" stroke="#e3343c" />
+        <path d="M62 65h18" stroke="#f6c945" />
+      </g>
     </svg>
   );
 }

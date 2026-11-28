@@ -295,7 +295,7 @@ export default function Landing() {
             <Word i={0}>Your</Word>{' '}
             <Word i={1}>inbox,</Word>{' '}
             <span className="lp-word lp-bot-inline" style={{ '--i': 2 } as CSSProperties}>
-              <BotMark size="100%" fg="#ffffff" bg="#0a0a0a" animated cap />
+              <BotMark size="100%" fg="#ffffff" bg="#0a0a0a" animated />
             </span>{' '}
             <Word i={3}>handled.</Word>
           </h1>
@@ -474,7 +474,6 @@ export default function Landing() {
                 animated
                 gradient
                 gradientColors={['#EA4045', '#F6C945', '#3C82F6', '#FFFFFF']}
-                cap
               />
             </span>{' '}
             <Word i={3}>mailroom.</Word>
