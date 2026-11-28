@@ -74,8 +74,8 @@ export function BotMark({
       gazeX += (pointerX - gazeX) * easing;
       gazeY += (pointerY - gazeY) * easing;
 
-      const dx = gazeX * 2;
-      const dy = gazeY * 1.7;
+      const dx = gazeX * 7;
+      const dy = gazeY * 5.5;
       leftEye.style.transform = `translate(${dx}px, ${dy}px)`;
       rightEye.style.transform = `translate(${dx}px, ${dy}px)`;
       frame = requestAnimationFrame(followPointer);
@@ -116,7 +116,7 @@ export function BotMark({
           </linearGradient>
         </defs>
       ) : null}
-      <path d={HEAD} fill={gradient ? `url(#${gradientId})` : fg} stroke="#ffffff" strokeWidth="1.5" />
+      <path d={HEAD} fill={gradient ? `url(#${gradientId})` : fg} />
       <g transform={EYE_TRANSFORM}>
         <g ref={eyeLeft} className="grok-eye">
           <path d={EYE_LEFT} fill={bg} />
@@ -124,11 +124,6 @@ export function BotMark({
         <g ref={eyeRight} className="grok-eye">
           <path d={EYE_RIGHT} fill={bg} />
         </g>
-      </g>
-      <g aria-hidden="true" fill="none" strokeWidth="5" strokeLinecap="round">
-        <path d="M20 65h18" stroke="#3c82f6" />
-        <path d="M41 65h18" stroke="#e3343c" />
-        <path d="M62 65h18" stroke="#f6c945" />
       </g>
     </svg>
   );
