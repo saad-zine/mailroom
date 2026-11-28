@@ -30,6 +30,7 @@ type BotMarkProps = {
   /** Palette for that gradient. */
   gradientColors?: string[];
   title?: string;
+  scarf?: boolean;
   className?: string;
   style?: CSSProperties;
 };
@@ -42,6 +43,7 @@ export function BotMark({
   gradient = false,
   gradientColors = ['#F19D38', '#EA4045', '#885CF5', '#3C82F6'],
   title,
+  scarf = false,
   className,
   style,
 }: BotMarkProps) {
@@ -166,7 +168,88 @@ export function BotMark({
           <path d={EYE_RIGHT} fill={bg} />
         </g>
       </g>
+      {scarf && (
+        <g aria-hidden="true">
+          <path d="M12 63c15 7 31 8 47 3 9-3 17-7 25-12l4 10c-8 8-19 14-31 17-17 4-33 3-48-4z" fill="#e3343c" />
+          <path d="M67 71c8-3 15-7 21-12l4 22c-6 6-14 8-22 5z" fill="#c9232c" />
+          <path d="M20 70c15 6 28 6 42 2" fill="none" stroke="#ff7478" strokeWidth="2" strokeLinecap="round" opacity=".7" />
+        </g>
+      )}
     </svg>
+  );
+}
+
+export function CursorBuddy({
+  size = '1em',
+  className,
+}: {
+  size?: number | string;
+  className?: string;
+}) {
+  const buddyRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const buddy = buddyRef.current;
+    if (!buddy || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let pointerX = -1000;
+    let pointerY = -1000;
+    let currentX = 0;
+    let currentY = 0;
+    let hopX = 0;
+    let hopY = 0;
+    let hopUntil = 0;
+    let lastHop = 0;
+    let previous = performance.now();
+    let frame = 0;
+
+    const onPointerMove = (event: PointerEvent) => {
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+    };
+
+    const animate = (now: number) => {
+      const rect = buddy.getBoundingClientRect();
+      const dx = pointerX - (rect.left + rect.width / 2);
+      const dy = pointerY - (rect.top + rect.height / 2);
+      const close = Math.abs(dx) < 150 && Math.abs(dy) < 100;
+
+      if (close && now - lastHop > 2600 && Math.hypot(dx, dy) < 115) {
+        hopX = dx >= 0 ? -54 : 54;
+        hopY = -25;
+        hopUntil = now + 480;
+        lastHop = now;
+      }
+
+      const hopActive = now < hopUntil;
+      const targetX = (close ? Math.max(-1, Math.min(1, dx / 130)) * 8 : 0) + (hopActive ? hopX : 0);
+      const targetY = (close ? Math.max(-1, Math.min(1, dy / 100)) * 5 : 0) + (hopActive ? hopY : 0);
+      const factor = 1 - Math.exp(-9 * ((now - previous) / 1000));
+      previous = now;
+      currentX += (targetX - currentX) * factor;
+      currentY += (targetY - currentY) * factor;
+      buddy.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+
+      frame = requestAnimationFrame(animate);
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    frame = requestAnimationFrame(animate);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('pointermove', onPointerMove);
+    };
+  }, []);
+
+  return (
+    <span
+      ref={buddyRef}
+      className={`lp-cursor-buddy ${className ?? ''}`}
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      <BotMark size="100%" fg="#ffffff" bg="#0a0a0a" animated scarf />
+    </span>
   );
 }
 

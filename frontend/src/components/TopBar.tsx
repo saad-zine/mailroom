@@ -1,4 +1,4 @@
-import { Bell, Menu, Search } from 'lucide-react';
+import { Bell, CircleUserRound, Mail, Menu, Search } from 'lucide-react';
 import type { View } from '../App';
 import { Kbd } from './ui';
 
@@ -16,7 +16,7 @@ export function TopBar({
   onOpenMobileNav: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-black/50 bg-[#151515] px-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:gap-3 sm:px-4 lg:px-5">
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-white/10 bg-[#111111] px-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:gap-3 sm:px-4 lg:px-5">
       <button
         type="button"
         onClick={onOpenMobileNav}
@@ -32,11 +32,8 @@ export function TopBar({
         className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-lg focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:outline-none"
         aria-label="Mailroom home"
       >
-        <img
-          src="/mailroom-wordmark.png"
-          alt="Mailroom"
-          className="h-[18px] w-[102px] shrink-0 object-contain"
-        />
+        <Mail className="h-[18px] w-[18px] shrink-0 text-white" strokeWidth={1.7} />
+        <span className="text-[14px] font-medium tracking-[-0.02em] text-white">Mailroom</span>
       </button>
 
       <div className="flex min-w-0 flex-1 justify-center px-1 sm:px-4">
@@ -71,7 +68,7 @@ export function TopBar({
         >
           <Bell className="h-4 w-4" strokeWidth={1.75} />
           {pendingCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal px-1 text-[9px] font-semibold text-white ring-2 ring-[#151515]">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal px-1 text-[9px] font-semibold text-white ring-2 ring-[#111111]">
               {pendingCount > 9 ? '9+' : pendingCount}
             </span>
           )}
@@ -84,9 +81,7 @@ export function TopBar({
           aria-label="Settings"
           className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-white/65 transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:outline-none"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-white ring-1 ring-white/15">
-            ME
-          </span>
+          <CircleUserRound className="h-[18px] w-[18px]" strokeWidth={1.6} />
         </button>
       </div>
     </header>

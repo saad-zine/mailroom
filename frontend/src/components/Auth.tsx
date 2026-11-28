@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Mail } from 'lucide-react';
 import { signInDemo } from '../lib/demoAuth';
 
 export function Auth({ onSignedIn }: { onSignedIn: () => void }) {
@@ -16,13 +17,10 @@ export function Auth({ onSignedIn }: { onSignedIn: () => void }) {
     <div className="auth-page">
       <header className="auth-header">
         <a href="/" className="auth-brand" aria-label="Mailroom home">
-          <img
-            src="/mailroom-wordmark.png"
-            alt="Mailroom"
-            className="h-[19px] w-[108px] object-contain"
-          />
+          <Mail size={18} strokeWidth={1.7} />
+          <span>Mailroom</span>
         </a>
-        <span className="auth-context">You are signing into Mailroom</span>
+        <a className="auth-context" href="/">Back to Mailroom</a>
       </header>
 
       <main className="auth-main">

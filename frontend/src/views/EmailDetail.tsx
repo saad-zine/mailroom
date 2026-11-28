@@ -364,7 +364,7 @@ export function EmailDetail({
                     setActionOk(null);
                   }}
                   rows={12}
-                  className="mt-1.5 min-h-[248px] w-full resize-y rounded-xl border border-border bg-wash/40 px-4 py-3.5 text-[13px] leading-relaxed text-body transition-colors placeholder:text-faint hover:border-border-strong focus:border-teal/40 focus:bg-white focus:ring-[3px] focus:ring-teal/10 focus:outline-none disabled:cursor-not-allowed disabled:bg-wash disabled:text-muted"
+                  className="mt-1.5 min-h-[248px] w-full resize-y rounded-xl border border-border bg-wash/40 px-4 py-3.5 text-[13px] leading-relaxed text-body transition-colors placeholder:text-faint hover:border-border-strong focus:border-teal/40 focus:bg-paper focus:ring-[3px] focus:ring-teal/10 focus:outline-none disabled:cursor-not-allowed disabled:bg-wash disabled:text-muted"
                   placeholder="Write the reply…"
                 />
 
@@ -442,7 +442,7 @@ export function EmailDetail({
             rows={3}
             autoFocus
             placeholder="e.g. Tone is too formal, and the refund policy is wrong."
-            className="w-full resize-y rounded-xl border border-border bg-wash/40 px-3.5 py-3 text-[13px] leading-relaxed text-body transition-colors placeholder:text-faint hover:border-border-strong focus:border-teal/40 focus:bg-white focus:ring-[3px] focus:ring-teal/10 focus:outline-none"
+            className="w-full resize-y rounded-xl border border-border bg-wash/40 px-3.5 py-3 text-[13px] leading-relaxed text-body transition-colors placeholder:text-faint hover:border-border-strong focus:border-teal/40 focus:bg-paper focus:ring-[3px] focus:ring-teal/10 focus:outline-none"
           />
           <div className="mt-5 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setShowReject(false)}>
@@ -475,7 +475,7 @@ function DetailShell({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-1.5 py-1 text-[12.5px] font-medium text-muted transition-colors hover:bg-black/[0.04] hover:text-ink focus-visible:ring-2 focus-visible:ring-teal/25 focus-visible:outline-none"
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-1.5 py-1 text-[12.5px] font-medium text-muted transition-colors hover:bg-white/[0.06] hover:text-ink focus-visible:ring-2 focus-visible:ring-teal/25 focus-visible:outline-none"
       >
         <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2} />
         Back

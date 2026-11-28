@@ -12,6 +12,7 @@ export default defineConfig({
     allowedHosts: ['sb-ihbo8pmlr5ko.vercel.run'],
     proxy: {
       '/api': 'http://localhost:8000',
+      '/health': 'http://localhost:8000',
     },
   },
 })

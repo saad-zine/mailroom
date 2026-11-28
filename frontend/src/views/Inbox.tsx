@@ -150,7 +150,7 @@ export function Inbox({ onOpenEmail }: { onOpenEmail: (id: string) => void }) {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search by sender, subject, or content…"
                 aria-label="Search emails"
-                className="h-9 w-full rounded-[10px] border border-border bg-wash/60 pr-8 pl-9 text-[13px] text-ink placeholder:text-faint transition-colors hover:border-border-strong focus:border-teal/40 focus:bg-white focus:ring-[3px] focus:ring-teal/10 focus:outline-none"
+                className="h-9 w-full rounded-[10px] border border-border bg-wash/60 pr-8 pl-9 text-[13px] text-ink placeholder:text-faint transition-colors hover:border-border-strong focus:border-teal/40 focus:bg-paper focus:ring-[3px] focus:ring-teal/10 focus:outline-none"
               />
               {query && (
                 <button

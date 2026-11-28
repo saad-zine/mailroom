@@ -1,6 +1,6 @@
-import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
-import { BrandMark } from './BrandMark';
-import { BotMark } from './GrokBot';
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
+import { X } from 'lucide-react';
+import { BotMark, CursorBuddy } from './GrokBot';
 import { signInDemo } from '../lib/demoAuth';
 import './landing.css';
 
@@ -13,10 +13,10 @@ const NAV = [
 ];
 
 const DETAILS = [
-  { label: 'Read & draft', body: 'The only Gmail access Mailroom asks for.' },
-  { label: 'Source-backed', body: 'Every draft shows the chunks behind it.' },
-  { label: 'Human gate', body: 'Nothing leaves your Gmail until you approve.' },
-  { label: 'Isolated', body: 'One workspace per account, enforced in the database.' },
+  { label: 'Read & draft', body: 'We never send or delete mail. You approve every saved draft.' },
+  { label: 'Source-backed', body: 'See the knowledge-base references behind every reply.' },
+  { label: 'Human approval', body: 'Edit, approve, or reject each draft before it reaches Gmail.' },
+  { label: 'Private workspace', body: 'Your inbox, drafts, and documents stay scoped to you.' },
 ];
 
 const STEPS = [
@@ -88,16 +88,143 @@ function Word({ children, i }: { children: string; i: number }) {
   );
 }
 
-export default function Landing() {
-  const [solid, setSolid] = useState(false);
-  const [formEmail, setFormEmail] = useState('');
-  const [formPassword, setFormPassword] = useState('');
+function LoginDialog({ onClose }: { onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
 
-  const startDemo = (event: FormEvent) => {
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    return () => {
+      if (dialog?.open) dialog.close();
+    };
+  }, []);
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     signInDemo();
     window.location.assign('/app');
   };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="lp-dialog lp-auth-dialog"
+      aria-labelledby="lp-auth-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <button className="lp-dialog-close" type="button" aria-label="Close sign in" onClick={onClose}>
+        <X size={18} strokeWidth={1.75} />
+      </button>
+      <p className="lp-eyebrow">Mailroom workspace</p>
+      <h2 id="lp-auth-title">{mode === 'signin' ? 'Welcome back.' : 'Create your workspace.'}</h2>
+      <p className="lp-dialog-copy">Sign in to review drafts and keep every reply in your hands.</p>
+      <form className="lp-dialog-form" onSubmit={submit}>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" autoComplete="email" placeholder="you@company.com" required autoFocus />
+        </label>
+        <label>
+          <span>Password</span>
+          <input
+            type="password"
+            name="password"
+            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            placeholder="Enter your password"
+            required
+          />
+        </label>
+        <button className="lp-btn lp-btn-solid lp-dialog-submit" type="submit">
+          {mode === 'signin' ? 'Sign in' : 'Create workspace'}
+          <Arrow />
+        </button>
+      </form>
+      <p className="lp-dialog-switch">
+        {mode === 'signin' ? "New to Mailroom?" : 'Already have an account?'}{' '}
+        <button type="button" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
+          {mode === 'signin' ? 'Create an account' : 'Sign in'}
+        </button>
+      </p>
+    </dialog>
+  );
+}
+
+function PricingDialog({
+  onClose,
+  onChoosePlan,
+}: {
+  onClose: () => void;
+  onChoosePlan: () => void;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    return () => {
+      if (dialog?.open) dialog.close();
+    };
+  }, []);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="lp-dialog lp-pricing-dialog"
+      aria-labelledby="lp-pricing-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <button className="lp-dialog-close" type="button" aria-label="Close pricing" onClick={onClose}>
+        <X size={18} strokeWidth={1.75} />
+      </button>
+      <p className="lp-eyebrow">Clear, human-first pricing</p>
+      <h2 id="lp-pricing-title">Mailroom pricing</h2>
+      <p className="lp-dialog-copy">Get started in the private beta. We&apos;ll share paid plan details before launch.</p>
+      <div className="lp-pricing-grid">
+        <article className="lp-pricing-card is-featured">
+          <span className="lp-pricing-name">Private beta</span>
+          <h3>Free</h3>
+          <p>Try the full review workflow while Mailroom is in beta.</p>
+          <ul>
+            <li>Connect one Gmail account</li>
+            <li>Source-backed draft suggestions</li>
+            <li>Human approval on every reply</li>
+          </ul>
+          <button className="lp-btn lp-btn-solid" type="button" onClick={onChoosePlan}>
+            Join the beta
+            <Arrow />
+          </button>
+        </article>
+        <article className="lp-pricing-card">
+          <span className="lp-pricing-name">After beta</span>
+          <h3>Paid plans, announced soon</h3>
+          <p>No surprise charges. We&apos;ll publish plan limits and pricing before any paid tier is available.</p>
+          <ul>
+            <li>Personal and team options</li>
+            <li>Clear usage limits</li>
+            <li>Upgrade only when you choose</li>
+          </ul>
+        </article>
+      </div>
+    </dialog>
+  );
+}
+
+export default function Landing() {
+  const [solid, setSolid] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [pricingOpen, setPricingOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 40);
@@ -147,13 +274,12 @@ export default function Landing() {
         </div>
 
         <div className="lp-nav-actions">
-          <a className="lp-btn lp-btn-quiet" href="/app">
+          <button className="lp-btn lp-btn-quiet" type="button" onClick={() => setLoginOpen(true)}>
             Sign in
-          </a>
-          <a className="lp-btn lp-btn-solid" href="/app">
-            Start automating
-            <Arrow />
-          </a>
+          </button>
+          <button className="lp-btn lp-btn-solid" type="button" onClick={() => setPricingOpen(true)}>
+            Pricing
+          </button>
         </div>
       </nav>
 
@@ -161,10 +287,7 @@ export default function Landing() {
         <div className="lp-hero-inner">
           <span className="lp-pill">
             <span className="lp-pill-text">
-              <b>Private by default.</b> Read &amp; draft access only
-            </span>
-            <span className="lp-pill-badge" aria-hidden="true">
-              <BotMark size={14} fg="#ffffff" bg="#1a1a1a" />
+              <b>Your approval stays in control.</b> Nothing sends itself.
             </span>
           </span>
 
@@ -172,7 +295,7 @@ export default function Landing() {
             <Word i={0}>Your</Word>{' '}
             <Word i={1}>inbox,</Word>{' '}
             <span className="lp-word lp-bot-inline" style={{ '--i': 2 } as CSSProperties}>
-              <BotMark size="100%" animated gradient />
+              <CursorBuddy size="100%" />
             </span>{' '}
             <Word i={3}>handled.</Word>
           </h1>
@@ -184,9 +307,9 @@ export default function Landing() {
           </p>
 
           <div className="lp-hero-actions">
-            <a className="lp-btn lp-btn-solid lp-btn-lg" href="/app">
-              <BrandMark size={18} strokeWidth={4.5} />
-              Start automating
+            <a className="lp-btn lp-btn-solid lp-btn-lg" href="#app">
+              See the workspace
+              <Arrow />
             </a>
             <a className="lp-btn lp-btn-card lp-btn-lg" href="#how">
               How it works
@@ -202,29 +325,12 @@ export default function Landing() {
               data-reveal
               style={{ '--delay': `${index * 60}ms` } as CSSProperties}
             >
-              <span className="lp-detail-label">{detail.label}</span>
+              <h2 className="lp-detail-label">{detail.label}</h2>
               <p>{detail.body}</p>
             </div>
           ))}
         </div>
 
-        <div className="lp-demo-wrap" data-reveal>
-          <div className="lp-demo">
-            <video
-              src="/mailroom-demo.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label="Mailroom product walkthrough: an email arrives, a sourced reply is drafted, and the draft is saved only after approval."
-            />
-          </div>
-          <div className="lp-demo-caption">
-            <span>Product walkthrough — rendered with Remotion</span>
-            <span>Mailroom / 00:12</span>
-          </div>
-        </div>
       </section>
 
       <main className="lp-main">
@@ -293,10 +399,10 @@ export default function Landing() {
                   Edit them, approve them, or throw them away — the call is always
                   yours.
                 </p>
-                <a className="lp-btn lp-btn-solid" href="/app">
-                  Start automating
+                <button className="lp-btn lp-btn-solid" type="button" onClick={() => setLoginOpen(true)}>
+                  Open the workspace
                   <Arrow />
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -336,46 +442,24 @@ export default function Landing() {
       <section className="lp-start" id="start">
         <div className="lp-start-inner" data-reveal>
           <div className="lp-start-copy">
-            <p className="lp-eyebrow">Get started</p>
+            <p className="lp-eyebrow">Your inbox, with you in control</p>
             <h2>
-              Open the <em>mailroom.</em>
+              A draft is a <em>starting point.</em>
             </h2>
             <p>
-              Create a workspace and connect Gmail. Mailroom drafts the first reply
-              and waits for your decision — no password setup needed in this demo.
+              Mailroom prepares replies with the source material attached. You
+              review, edit, or dismiss every one before anything is saved to Gmail.
             </p>
           </div>
 
-          <form className="lp-form-card" onSubmit={startDemo}>
-            <h3>Create your workspace</h3>
-            <p className="lp-form-note">Any email and password opens the portal.</p>
-            <div className="lp-form-fields">
-              <label>
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={formEmail}
-                  onChange={(event) => setFormEmail(event.target.value)}
-                  autoComplete="email"
-                  placeholder="you@company.com"
-                />
-              </label>
-              <label>
-                <span>Password</span>
-                <input
-                  type="password"
-                  value={formPassword}
-                  onChange={(event) => setFormPassword(event.target.value)}
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                />
-              </label>
-            </div>
-            <button className="lp-form-submit" type="submit">
-              Create account
+          <div className="lp-start-card">
+            <h3>Start with a private workspace</h3>
+            <p>Connect Gmail when you&apos;re ready. Nothing is sent automatically.</p>
+            <button className="lp-btn lp-btn-solid" type="button" onClick={() => setLoginOpen(true)}>
+              Continue to Mailroom
+              <Arrow />
             </button>
-            <p className="lp-form-foot">Demo mode — any credentials work.</p>
-          </form>
+          </div>
         </div>
       </section>
 
@@ -398,10 +482,10 @@ export default function Landing() {
             Connect a Gmail account. Mailroom drafts the first reply and waits for
             your decision.
           </p>
-          <a className="lp-btn lp-btn-solid lp-btn-lg" href="/app">
-            Start automating
+          <button className="lp-btn lp-btn-solid lp-btn-lg" type="button" onClick={() => setLoginOpen(true)}>
+            Open the workspace
             <Arrow />
-          </a>
+          </button>
         </div>
       </section>
 
@@ -414,14 +498,25 @@ export default function Landing() {
               className="h-4 w-[90px] object-contain"
             />
           </span>
-          <div className="lp-footer-links">
+          <nav className="lp-footer-links" aria-label="Footer">
             <a href="#how">How it works</a>
             <a href="#privacy">Privacy</a>
-            <a href="/app">Sign in</a>
-          </div>
+            <button type="button" onClick={() => setLoginOpen(true)}>Sign in</button>
+          </nav>
           <span>© 2026</span>
         </div>
       </footer>
+
+      {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} />}
+      {pricingOpen && (
+        <PricingDialog
+          onClose={() => setPricingOpen(false)}
+          onChoosePlan={() => {
+            setPricingOpen(false);
+            setLoginOpen(true);
+          }}
+        />
+      )}
     </div>
   );
 }

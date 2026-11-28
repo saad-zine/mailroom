@@ -32,7 +32,7 @@ export function Sidebar({
     <>
       {open && (
         <div
-          className="animate-fade fixed inset-x-0 top-14 bottom-0 z-30 bg-ink/30 backdrop-blur-[1px] md:hidden"
+          className="animate-fade fixed inset-x-0 top-14 bottom-0 z-30 bg-black/55 backdrop-blur-[1px] md:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -40,7 +40,7 @@ export function Sidebar({
 
       <aside
         className={cn(
-          'fixed top-14 bottom-0 left-0 z-40 flex w-[248px] shrink-0 flex-col border-r border-border bg-[#fbfbf9] transition-transform duration-200 ease-out',
+          'fixed top-14 bottom-0 left-0 z-40 flex w-[248px] shrink-0 flex-col border-r border-border bg-[#0d0d0d] transition-transform duration-200 ease-out',
           'md:static md:top-auto md:bottom-auto md:z-auto md:translate-x-0',
           open ? 'translate-x-0 shadow-pop md:shadow-none' : '-translate-x-full',
         )}
@@ -105,7 +105,7 @@ function NavItem({
         'focus-visible:ring-2 focus-visible:ring-teal/25 focus-visible:outline-none',
         active
           ? 'bg-paper font-medium text-ink shadow-xs ring-1 ring-black/[0.04]'
-          : 'text-[#5f646b] hover:bg-black/[0.035] hover:text-ink',
+          : 'text-muted hover:bg-white/[0.055] hover:text-ink',
       )}
     >
       <Icon
